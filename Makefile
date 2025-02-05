@@ -1,4 +1,32 @@
+-include .env
+
+MIGRATIONS_DIR   = ./sql/migrations/
 GOLANGCI_LINT_CACHE?=/tmp/gophermart
+
+.PHONY: build
+build:
+	go build -o ./cmd/gophermart/main ./cmd/gophermart
+
+.PHONY: run
+run:
+	go run ./cmd/gophermart/main.go
+
+.PHONY: migrate
+migrate:
+	migrate -path "$(MIGRATIONS_DIR)" -database "$(DATABASE_URI)" $(filter-out $@,$(MAKECMDGOALS))
+
+.PHONY: db-create-migration
+db-create-migration:
+	migrate create -ext sql -dir "$(MIGRATIONS_DIR)" $(filter-out $@,$(MAKECMDGOALS))
+
+.PHONY: gensql
+gensql:
+	sqlc generate
+
+genswagger:
+	swag fmt -d ./cmd/gophermart
+	swag fmt -d ./internal/controller
+	swag init -o ./docs --dir ./internal/controller -g ../../cmd/gophermart/main.go --parseDependency
 
 .PHONY: golangci-lint-run
 golangci-lint-run: _golangci-lint-rm-unformatted-report

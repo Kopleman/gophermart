@@ -1,0 +1,99 @@
+definitions:
+  controller.LoginResponseDto:
+    properties:
+      token:
+        example: some_token
+        type: string
+    type: object
+  dto.CreateUserRequestDTO:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    type: object
+  dto.UserLoginRequestDTO:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /api/user/login:
+    post:
+      consumes:
+      - application/json
+      description: Performs user login, returns jwt token
+      parameters:
+      - description: Body params
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UserLoginRequestDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.LoginResponseDto'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Performs user login
+      tags:
+      - user
+  /api/user/register:
+    post:
+      consumes:
+      - application/json
+      description: Register new user
+      parameters:
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Body params
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateUserRequestDTO'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "409":
+          description: User already exists
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Register new user
+      tags:
+      - user
+swagger: "2.0"

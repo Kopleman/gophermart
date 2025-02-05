@@ -42,5 +42,4 @@ func run(logger log.Logger) {
 		}
 		cancel()
 	}(ctx)
-
 }

@@ -89,11 +89,11 @@ type HTTPClient struct {
 
 const defaultRetryCount = 3
 
-func NewHTTPClient(baseUrl string, logger log.Logger) *HTTPClient {
+func NewHTTPClient(baseURL string, logger log.Logger) *HTTPClient {
 	transport := NewRetryableTransport(logger, defaultRetryCount)
 
 	return &HTTPClient{
-		BaseURL: baseUrl,
+		BaseURL: baseURL,
 		client: &http.Client{
 			Transport: transport,
 		},

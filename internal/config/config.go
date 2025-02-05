@@ -16,8 +16,7 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
-	// Validate config
-	return validation.ValidateStruct(
+	return validation.ValidateStruct( //nolint:all // self explanatory.
 		c,
 		validation.Field(&c.EndPoint, validation.Required),
 		validation.Field(&c.AccrualEndPoint, validation.Required),

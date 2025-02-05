@@ -13,7 +13,7 @@ import (
 	"github.com/Kopleman/gophermart/internal/service"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/logger"
+	fiberLogger "github.com/gofiber/fiber/v2/middleware/logger"
 )
 
 type Server struct {
@@ -64,7 +64,7 @@ func (s *Server) Start(ctx context.Context) error {
 	runTimeError := make(chan error, 1)
 
 	app := fiber.New()
-	app.Use(logger.New())
+	app.Use(fiberLogger.New())
 
 	s.app = app
 

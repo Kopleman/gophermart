@@ -20,18 +20,18 @@ type Store interface {
 
 type Service struct {
 	logger log.Logger
-	config *config.Config
+	cfg    *config.Config
 	store  Store
 }
 
 func NewUserService(
 	logger log.Logger,
-	config *config.Config,
+	cfg *config.Config,
 	store Store,
 ) *Service {
 	return &Service{
 		logger,
-		config,
+		cfg,
 		store,
 	}
 }
@@ -100,9 +100,9 @@ func (s *Service) generateToken(id string) (string, error) {
 		"user_id": id,
 	})
 
-	t, err := token.SignedString([]byte(s.config.JWTSecret))
+	t, err := token.SignedString([]byte(s.cfg.JWTSecret))
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("cant generate token: %w", err)
 	}
 
 	return t, nil
@@ -110,10 +110,10 @@ func (s *Service) generateToken(id string) (string, error) {
 
 func (s *Service) VerifyToken(tokenString string) (bool, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return []byte(s.config.JWTSecret), nil
+		return []byte(s.cfg.JWTSecret), nil
 	})
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("cant parse token: %w", err)
 	}
 
 	return token.Valid, nil

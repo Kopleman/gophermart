@@ -13,13 +13,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-//type UserController interface {
-//	Register() fiber.Handler
-//	Logout() fiber.Handler
-//	Authorize() fiber.Handler
-//	RefreshAcessToken() fiber.Handler
-//}
-
 type UserService interface {
 	CreateUser(ctx context.Context, createDto *dto.CreateUserRequestDTO) error
 	AuthorizeUser(ctx context.Context, loginDto *dto.UserLoginRequestDTO) (string, error)
@@ -28,19 +21,24 @@ type UserService interface {
 type UserController struct {
 	logger      log.Logger
 	validator   *validator.Validate
-	config      *config.Config
+	cfg         *config.Config
 	userService UserService
 }
 
-func NewUserController(logger log.Logger, validator *validator.Validate, config *config.Config, userService UserService) *UserController {
-	return &UserController{logger, validator, config, userService}
+func NewUserController(
+	logger log.Logger,
+	validatorInstance *validator.Validate,
+	cfg *config.Config,
+	userService UserService,
+) *UserController {
+	return &UserController{logger, validatorInstance, cfg, userService}
 }
 
 type StatusResponseDto struct {
 	Status string `json:"status"`
 }
 
-// RegisterNewUser
+// RegisterNewUser register new user
 //
 //	@Summary		Register new user
 //	@Description	Register new user
@@ -80,7 +78,7 @@ type LoginResponseDto struct {
 	Token string `json:"token" example:"some_token"`
 }
 
-// LoginUser
+// LoginUser login user
 //
 //	@Summary		Performs user login
 //	@Description	Performs user login, returns jwt token

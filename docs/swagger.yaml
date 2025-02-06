@@ -8,15 +8,19 @@ definitions:
   dto.CreateUserRequestDTO:
     properties:
       login:
+        example: login
         type: string
       password:
+        example: password
         type: string
     type: object
   dto.UserLoginRequestDTO:
     properties:
       login:
+        example: login
         type: string
       password:
+        example: password
         type: string
     type: object
 info:
@@ -55,12 +59,12 @@ paths:
             type: string
       summary: Performs user login
       tags:
-      - user
-  /api/user/register:
+      - auth
+  /api/user/orders:
     post:
       consumes:
-      - application/json
-      description: Register new user
+      - text/plain
+      description: Add new user order to system
       parameters:
       - default: Bearer <Add access token here>
         description: Insert your access token
@@ -68,6 +72,52 @@ paths:
         name: Authorization
         required: true
         type: string
+      - description: Body params
+        in: body
+        name: data
+        required: true
+        schema:
+          type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "202":
+          description: Accepted
+          schema:
+            type: string
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "409":
+          description: invalid order
+          schema:
+            type: string
+        "422":
+          description: invalid order
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Add new order
+      tags:
+      - order
+  /api/user/register:
+    post:
+      consumes:
+      - application/json
+      description: Register new user
+      parameters:
       - description: Body params
         in: body
         name: data
@@ -95,5 +145,5 @@ paths:
             type: string
       summary: Register new user
       tags:
-      - user
+      - auth
 swagger: "2.0"

@@ -7,14 +7,17 @@ package pgxstore
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/google/uuid"
 )
 
 type Querier interface {
+	CreateOrder(ctx context.Context, arg CreateOrderParams) (*Order, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (*User, error)
 	GetAllUsers(ctx context.Context) ([]*User, error)
-	GetUserById(ctx context.Context, id pgtype.UUID) (*User, error)
+	GetOrderByNumber(ctx context.Context, orderNumber string) (*Order, error)
+	GetUserById(ctx context.Context, id uuid.UUID) (*User, error)
 	GetUserByLogin(ctx context.Context, login string) (*User, error)
+	PutOrderForProcessing(ctx context.Context, orderID uuid.UUID) (*OrdersToProcess, error)
 }
 
 var _ Querier = (*Queries)(nil)

@@ -42,15 +42,14 @@ type StatusResponseDto struct {
 //
 //	@Summary		Register new user
 //	@Description	Register new user
-//	@Tags			user
+//	@Tags			auth
 //	@Accept			json
 //	@Produce		plain
-//	@Param			Authorization	header		string						true	"Insert your access token"	default(Bearer <Add access token here>)
-//	@Param			data			body		dto.CreateUserRequestDTO	true	"Body params"
-//	@Success		200				{string}	string						"OK"
-//	@Failure		400				{string}	string						"Bad request"
-//	@Failure		409				{string}	string						"User already exists"
-//	@Failure		500				{string}	string						"Internal Server Error"
+//	@Param			data	body		dto.CreateUserRequestDTO	true	"Body params"
+//	@Success		200		{string}	string						"OK"
+//	@Failure		400		{string}	string						"Bad request"
+//	@Failure		409		{string}	string						"User already exists"
+//	@Failure		500		{string}	string						"Internal Server Error"
 //	@Router			/api/user/register [post]
 func (c *UserController) RegisterNewUser() fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
@@ -64,7 +63,7 @@ func (c *UserController) RegisterNewUser() fiber.Handler {
 
 		if createError := c.userService.CreateUser(ctx.Context(), data); createError != nil {
 			if errors.Is(createError, service.ErrAlreadyExists) {
-				return fiber.NewError(fiber.StatusConflict, "User already exists")
+				return fiber.ErrConflict
 			}
 			c.logger.Errorf("register new user error: %w", createError)
 			return fiber.ErrInternalServerError
@@ -82,7 +81,7 @@ type LoginResponseDto struct {
 //
 //	@Summary		Performs user login
 //	@Description	Performs user login, returns jwt token
-//	@Tags			user
+//	@Tags			auth
 //	@Accept			json
 //	@Produce		json
 //	@Param			data	body		dto.UserLoginRequestDTO	true	"Body params"

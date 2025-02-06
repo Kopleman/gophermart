@@ -142,6 +142,5 @@ func (o *OrderController) GetOrders() fiber.Handler {
 			dtos[i] = order.ToInfoDTO()
 		}
 		return ctx.JSON(dtos)
-
 	}
 }

@@ -28,6 +28,10 @@ genswagger:
 	swag fmt -d ./internal/controller
 	swag init -o ./docs --dir ./internal/controller -g ../../cmd/gophermart/main.go --parseDependency
 
+.PHONY: fix-field-alignment
+fix-field-alignment:
+	fieldalignment -fix ./...
+
 .PHONY: golangci-lint-run
 golangci-lint-run: _golangci-lint-rm-unformatted-report
 

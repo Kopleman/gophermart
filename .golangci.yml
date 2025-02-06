@@ -40,8 +40,6 @@ output:
   print-issued-lines: true
   # Print linter name in the end of issue text.
   print-linter-name: true
-  # Make issues output unique by line.
-  uniq-by-line: true
   # Add a prefix to the output file references.
   path-prefix: ""
   # Sort results by: filepath, line and column.
@@ -364,7 +362,7 @@ linters-settings:
     # - "default": report only the default slog logger
     no-global: "all"
     # Enforce using methods that accept a context.
-    context-only: true
+    context: "all"
     # Enforce using static values for log messages.
     static-msg: false
     # Enforce using constants instead of raw keys.
@@ -495,7 +493,7 @@ linters:
     - godot
     - gofmt
     - goimports
-    - gomnd
+    - mnd
     - goprintffuncname
     - gosec
     - gosimple
@@ -562,6 +560,8 @@ issues:
   fix: false
   max-issues-per-linter: 0
   max-same-issues: 0
+  # Make issues output unique by line.
+  uniq-by-line: true
 
   # Invariable parameters #
 

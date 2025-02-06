@@ -34,7 +34,10 @@ func (r *OrderRepo) GetOrderByNumber(ctx context.Context, orderNumber string) (*
 	return order, nil
 }
 
-func (r *OrderRepo) CreateOrder(ctx context.Context, createDTO *dto.CreateOrderDTO) (*pgxstore.Order, *pgxstore.OrdersToProcess, error) {
+func (r *OrderRepo) CreateOrder(
+	ctx context.Context,
+	createDTO *dto.CreateOrderDTO,
+) (*pgxstore.Order, *pgxstore.OrdersToProcess, error) {
 	order, orderToProcess, err := r.store.CreateNewOrder(ctx, createDTO)
 	if err != nil {
 		return nil, nil, fmt.Errorf("create order: %w", err)

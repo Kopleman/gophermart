@@ -59,9 +59,9 @@ func NewOrderController(
 //	@Router			/api/user/orders [post]
 func (o *OrderController) AddOrder() fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
-		userId, err := middlerware.GetUserId(ctx)
+		userID, err := middlerware.GetUserID(ctx)
 		if err != nil {
-			o.logger.Errorf("AddOrder get userId: %w", err)
+			o.logger.Errorf("AddOrder get userID: %w", err)
 			return fiber.ErrUnauthorized
 		}
 
@@ -82,17 +82,17 @@ func (o *OrderController) AddOrder() fiber.Handler {
 		}
 
 		if order != nil {
-			if order.UserID != userId {
+			if order.UserID != userID {
 				return fiber.ErrConflict
 			}
 
-			if order.UserID == userId {
+			if order.UserID == userID {
 				return ctx.SendStatus(fiber.StatusOK)
 			}
 		}
 
 		createDto := dto.CreateOrderDTO{
-			UserID:      userId,
+			UserID:      userID,
 			OrderNumber: orderNumber,
 		}
 		if err = o.orderService.CreateOrder(ctx.Context(), &createDto); err != nil {

@@ -138,28 +138,28 @@ func AllProcessStatusTypeValues() []ProcessStatusType {
 }
 
 type Order struct {
-	ID          uuid.UUID        `db:"id" json:"id"`
-	UserID      uuid.UUID        `db:"user_id" json:"user_id"`
-	OrderNumber string           `db:"order_number" json:"order_number"`
-	Status      OrderStatusType  `db:"status" json:"status"`
 	CreatedAt   pgtype.Timestamp `db:"created_at" json:"created_at"`
 	UpdatedAt   pgtype.Timestamp `db:"updated_at" json:"updated_at"`
 	DeletedAt   pgtype.Timestamp `db:"deleted_at" json:"deleted_at"`
+	OrderNumber string           `db:"order_number" json:"order_number"`
+	Status      OrderStatusType  `db:"status" json:"status"`
+	ID          uuid.UUID        `db:"id" json:"id"`
+	UserID      uuid.UUID        `db:"user_id" json:"user_id"`
 }
 
 type OrdersToProcess struct {
-	OrderID       uuid.UUID         `db:"order_id" json:"order_id"`
-	ProcessStatus ProcessStatusType `db:"process_status" json:"process_status"`
 	CreatedAt     pgtype.Timestamp  `db:"created_at" json:"created_at"`
 	UpdatedAt     pgtype.Timestamp  `db:"updated_at" json:"updated_at"`
 	DeletedAt     pgtype.Timestamp  `db:"deleted_at" json:"deleted_at"`
+	ProcessStatus ProcessStatusType `db:"process_status" json:"process_status"`
+	OrderID       uuid.UUID         `db:"order_id" json:"order_id"`
 }
 
 type User struct {
-	ID           uuid.UUID        `db:"id" json:"id"`
-	Login        string           `db:"login" json:"login"`
-	PasswordHash string           `db:"password_hash" json:"password_hash"`
 	CreatedAt    pgtype.Timestamp `db:"created_at" json:"created_at"`
 	UpdatedAt    pgtype.Timestamp `db:"updated_at" json:"updated_at"`
 	DeletedAt    pgtype.Timestamp `db:"deleted_at" json:"deleted_at"`
+	Login        string           `db:"login" json:"login"`
+	PasswordHash string           `db:"password_hash" json:"password_hash"`
+	ID           uuid.UUID        `db:"id" json:"id"`
 }

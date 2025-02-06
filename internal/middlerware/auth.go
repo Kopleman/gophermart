@@ -22,13 +22,22 @@ func NewAuthMiddleWare(cfg *config.Config) fiber.Handler {
 	}
 }
 
-func GetUserId(ctx *fiber.Ctx) (uuid.UUID, error) {
-	user := ctx.Locals("user").(*jwt.Token)
-	claims := user.Claims.(jwt.MapClaims)
-	userIdString := claims["userId"].(string)
-	userId, err := uuid.Parse(userIdString)
-	if err != nil {
-		return uuid.Nil, errors.New("middleware.GetUserId: cannot convert userId from locals to uuid.UUID")
+func GetUserID(ctx *fiber.Ctx) (uuid.UUID, error) {
+	user, ok := ctx.Locals("user").(*jwt.Token)
+	if !ok {
+		return uuid.Nil, errors.New("middleware.GetUserID: cannot get user from context")
 	}
-	return userId, nil
+	claims, ok := user.Claims.(jwt.MapClaims)
+	if !ok {
+		return uuid.Nil, errors.New("middleware.GetUserID: cannot convert users claims")
+	}
+	userIDString, ok := claims["userID"].(string)
+	if !ok {
+		return uuid.Nil, errors.New("middleware.GetUserID: cannot convert userID to string")
+	}
+	userID, err := uuid.Parse(userIDString)
+	if err != nil {
+		return uuid.Nil, errors.New("middleware.GetUserID: cannot convert userID from locals to uuid.UUID")
+	}
+	return userID, nil
 }

@@ -45,7 +45,10 @@ func (o *Order) ToDTO() *dto.OrderDTO {
 	}
 }
 
-func (p *PGXStore) CreateNewOrder(ctx context.Context, createDTO *dto.CreateOrderDTO) (*Order, *OrdersToProcess, error) {
+func (p *PGXStore) CreateNewOrder(
+	ctx context.Context,
+	createDTO *dto.CreateOrderDTO,
+) (*Order, *OrdersToProcess, error) {
 	tx, err := p.startTx(ctx, &pgx.TxOptions{})
 	if err != nil {
 		return nil, nil, fmt.Errorf("pgxstore.CreateNewOrder could not start transaction: %w", err)

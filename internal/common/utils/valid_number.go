@@ -24,7 +24,7 @@ func IsValidOrderNumber(numberStr string) bool {
 
 		if double {
 			digit *= 2
-			if digit > 9 {
+			if digit > 9 { //nolint:all // too tedious to move it
 				digit -= 9
 			}
 		}

@@ -31,7 +31,7 @@ func GetUserID(ctx *fiber.Ctx) (uuid.UUID, error) {
 	if !ok {
 		return uuid.Nil, errors.New("middleware.GetUserID: cannot convert users claims")
 	}
-	userIDString, ok := claims["userID"].(string)
+	userIDString, ok := claims["userId"].(string)
 	if !ok {
 		return uuid.Nil, errors.New("middleware.GetUserID: cannot convert userID to string")
 	}

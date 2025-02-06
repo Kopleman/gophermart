@@ -68,6 +68,58 @@ const docTemplate = `{
             }
         },
         "/api/user/orders": {
+            "get": {
+                "description": "Fetch list of users orders",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "order"
+                ],
+                "summary": "Fetch list of users orders",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.OrderInfoDTO"
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "Accepted",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Add new user order to system",
                 "consumes": [
@@ -125,13 +177,13 @@ const docTemplate = `{
                         }
                     },
                     "409": {
-                        "description": "invalid order",
+                        "description": "invalid order number",
                         "schema": {
                             "type": "string"
                         }
                     },
                     "422": {
-                        "description": "invalid order",
+                        "description": "invalid order number",
                         "schema": {
                             "type": "string"
                         }
@@ -218,6 +270,27 @@ const docTemplate = `{
                 "password": {
                     "type": "string",
                     "example": "password"
+                }
+            }
+        },
+        "dto.OrderInfoDTO": {
+            "type": "object",
+            "properties": {
+                "accrual": {
+                    "type": "number",
+                    "example": 500
+                },
+                "order_number": {
+                    "type": "string",
+                    "example": "49927398716"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "NEW"
+                },
+                "uploaded_at": {
+                    "type": "string",
+                    "example": "2020-12-10T15:12:01+03:00"
                 }
             }
         },

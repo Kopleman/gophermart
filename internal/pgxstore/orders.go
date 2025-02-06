@@ -3,6 +3,7 @@ package pgxstore
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/Kopleman/gophermart/internal/common/dto"
 	"github.com/jackc/pgx/v5"
@@ -42,6 +43,8 @@ func (o *Order) ToDTO() *dto.OrderDTO {
 		UserID:      o.UserID,
 		OrderNumber: o.OrderNumber,
 		Status:      o.Status.String(),
+		Accrual:     o.Accrual,
+		CreatedAt:   o.CreatedAt.Format(time.RFC3339),
 	}
 }
 

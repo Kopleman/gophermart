@@ -12,11 +12,13 @@ import (
 	"github.com/Kopleman/gophermart/internal/service"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
 type OrderService interface {
 	GetOrderByNumber(ctx context.Context, orderNumber string) (*dto.OrderDTO, error)
 	CreateOrder(ctx context.Context, createDTO *dto.CreateOrderDTO) error
+	GetUserOrders(ctx context.Context, userID uuid.UUID) ([]*dto.OrderDTO, error)
 }
 
 type OrderController struct {
@@ -53,8 +55,8 @@ func NewOrderController(
 //	@Success		202				{string}	string	"Accepted"
 //	@Failure		400				{string}	string	"Bad request"
 //	@Failure		401				{string}	string	"Unauthorized"
-//	@Failure		409				{string}	string	"invalid order"
-//	@Failure		422				{string}	string	"invalid order"
+//	@Failure		409				{string}	string	"invalid order number"
+//	@Failure		422				{string}	string	"invalid order number"
 //	@Failure		500				{string}	string	"Internal Server Error"
 //	@Router			/api/user/orders [post]
 func (o *OrderController) AddOrder() fiber.Handler {
@@ -101,5 +103,45 @@ func (o *OrderController) AddOrder() fiber.Handler {
 		}
 
 		return ctx.SendStatus(fiber.StatusAccepted)
+	}
+}
+
+// GetOrders Fetch list of users orders
+//
+//	@Summary		Fetch list of users orders
+//	@Description	Fetch list of users orders
+//	@Tags			order
+//	@Accept			plain
+//	@Produce		plain
+//	@Param			Authorization	header		string	true	"Insert your access token"	default(Bearer <Add access token here>)
+//	@Success		200				{array}		dto.OrderInfoDTO
+//	@Success		204				{string}	string	"Accepted"
+//	@Failure		401				{string}	string	"Unauthorized"
+//	@Failure		500				{string}	string	"Internal Server Error"
+//	@Router			/api/user/orders [get]
+func (o *OrderController) GetOrders() fiber.Handler {
+	return func(ctx *fiber.Ctx) error {
+		userID, err := middlerware.GetUserID(ctx)
+		if err != nil {
+			o.logger.Errorf("GetOrders get userID: %w", err)
+			return fiber.ErrUnauthorized
+		}
+
+		orders, err := o.orderService.GetUserOrders(ctx.Context(), userID)
+		if err != nil {
+			o.logger.Errorf("GetOrders get orders: %w", err)
+			return fiber.ErrInternalServerError
+		}
+
+		if len(orders) == 0 {
+			return ctx.SendStatus(fiber.StatusNoContent)
+		}
+
+		dtos := make([]*dto.OrderInfoDTO, len(orders))
+		for i, order := range orders {
+			dtos[i] = order.ToInfoDTO()
+		}
+		return ctx.JSON(dtos)
+
 	}
 }

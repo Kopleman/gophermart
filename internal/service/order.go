@@ -9,11 +9,13 @@ import (
 	"github.com/Kopleman/gophermart/internal/common/log"
 	"github.com/Kopleman/gophermart/internal/config"
 	"github.com/Kopleman/gophermart/internal/pgxstore"
+	"github.com/google/uuid"
 )
 
 type OrderRepo interface {
 	GetOrderByNumber(ctx context.Context, orderNumber string) (*pgxstore.Order, error)
 	CreateOrder(ctx context.Context, createDTO *dto.CreateOrderDTO) (*pgxstore.Order, *pgxstore.OrdersToProcess, error)
+	GetUserOrders(ctx context.Context, userID uuid.UUID) ([]*pgxstore.Order, error)
 }
 
 type OrderService struct {
@@ -52,4 +54,19 @@ func (os *OrderService) CreateOrder(ctx context.Context, createDTO *dto.CreateOr
 		return fmt.Errorf("error creating order %s: %w", createDTO.OrderNumber, err)
 	}
 	return nil
+}
+
+func (os *OrderService) GetUserOrders(ctx context.Context, userID uuid.UUID) ([]*dto.OrderDTO, error) {
+	orders, err := os.orderRepo.GetUserOrders(ctx, userID)
+	if err != nil {
+		if errors.Is(err, pgxstore.ErrNotFound) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("error getting user %s orders: %w", userID, err)
+	}
+	dtos := make([]*dto.OrderDTO, len(orders))
+	for i, order := range orders {
+		dtos[i] = order.ToDTO()
+	}
+	return dtos, nil
 }

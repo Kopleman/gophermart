@@ -14,12 +14,12 @@ import (
 const CreateOrder = `-- name: CreateOrder :one
 INSERT INTO orders (user_id, order_number, status)
 VALUES ($1, $2,  'NEW')
-RETURNING id, user_id, order_number, status, created_at, updated_at, deleted_at
+RETURNING id, user_id, order_number, status, accrual, created_at, updated_at, deleted_at
 `
 
 type CreateOrderParams struct {
-	OrderNumber string    `db:"order_number" json:"order_number"`
 	UserID      uuid.UUID `db:"user_id" json:"user_id"`
+	OrderNumber string    `db:"order_number" json:"order_number"`
 }
 
 func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (*Order, error) {
@@ -30,6 +30,7 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (*Orde
 		&i.UserID,
 		&i.OrderNumber,
 		&i.Status,
+		&i.Accrual,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
@@ -38,7 +39,7 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (*Orde
 }
 
 const GetOrderByNumber = `-- name: GetOrderByNumber :one
-SELECT id, user_id, order_number, status, created_at, updated_at, deleted_at FROM orders WHERE order_number=$1 LIMIT 1
+SELECT id, user_id, order_number, status, accrual, created_at, updated_at, deleted_at FROM orders WHERE order_number=$1 LIMIT 1
 `
 
 func (q *Queries) GetOrderByNumber(ctx context.Context, orderNumber string) (*Order, error) {
@@ -49,11 +50,45 @@ func (q *Queries) GetOrderByNumber(ctx context.Context, orderNumber string) (*Or
 		&i.UserID,
 		&i.OrderNumber,
 		&i.Status,
+		&i.Accrual,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
 	)
 	return &i, err
+}
+
+const GetUserOrders = `-- name: GetUserOrders :many
+SELECT id, user_id, order_number, status, accrual, created_at, updated_at, deleted_at FROM orders WHERE user_id=$1 ORDER BY created_at DESC
+`
+
+func (q *Queries) GetUserOrders(ctx context.Context, userID uuid.UUID) ([]*Order, error) {
+	rows, err := q.db.Query(ctx, GetUserOrders, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*Order{}
+	for rows.Next() {
+		var i Order
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.OrderNumber,
+			&i.Status,
+			&i.Accrual,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const PutOrderForProcessing = `-- name: PutOrderForProcessing :one

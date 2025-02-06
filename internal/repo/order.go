@@ -8,6 +8,7 @@ import (
 	"github.com/Kopleman/gophermart/internal/common/dto"
 	"github.com/Kopleman/gophermart/internal/common/log"
 	"github.com/Kopleman/gophermart/internal/pgxstore"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -43,4 +44,16 @@ func (r *OrderRepo) CreateOrder(
 		return nil, nil, fmt.Errorf("create order: %w", err)
 	}
 	return order, orderToProcess, nil
+}
+
+func (r *OrderRepo) GetUserOrders(ctx context.Context, userID uuid.UUID) ([]*pgxstore.Order, error) {
+	orders, err := r.store.GetUserOrders(ctx, userID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, pgxstore.ErrNotFound
+		}
+		return nil, fmt.Errorf("get user orders: %w", err)
+	}
+
+	return orders, nil
 }

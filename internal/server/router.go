@@ -24,6 +24,7 @@ func (s *Server) applyRoutes(
 	userGroup.Post("/login", userController.LoginUser())
 	orderGroup := userGroup.Group("/", authMiddleware)
 	orderGroup.Post("/orders", orderController.AddOrder())
+	orderGroup.Get("/orders", orderController.GetOrders())
 
 	s.app.Use(func(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusNotFound) // => 404 "Not Found"

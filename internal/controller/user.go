@@ -96,7 +96,7 @@ func (c *UserController) loginUser(ctx *fiber.Ctx) error {
 
 	authHeaderValue := "Bearer " + token
 	ctx.Append("Authorization", authHeaderValue)
-	return ctx.JSON(LoginResponseDto{
+	return ctx.JSON(LoginResponseDto{ //nolint:all // it will be overhead
 		Token: token,
 	})
 }

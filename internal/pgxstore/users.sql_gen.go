@@ -8,7 +8,7 @@ package pgxstore
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/google/uuid"
 )
 
 const CreateUser = `-- name: CreateUser :one
@@ -71,7 +71,7 @@ const GetUserById = `-- name: GetUserById :one
 SELECT id, login, password_hash, created_at, updated_at, deleted_at FROM users WHERE id=$1 LIMIT 1
 `
 
-func (q *Queries) GetUserById(ctx context.Context, id pgtype.UUID) (*User, error) {
+func (q *Queries) GetUserById(ctx context.Context, id uuid.UUID) (*User, error) {
 	row := q.db.QueryRow(ctx, GetUserById, id)
 	var i User
 	err := row.Scan(

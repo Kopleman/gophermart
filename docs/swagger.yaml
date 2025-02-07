@@ -8,15 +8,34 @@ definitions:
   dto.CreateUserRequestDTO:
     properties:
       login:
+        example: login
         type: string
       password:
+        example: password
+        type: string
+    type: object
+  dto.OrderInfoDTO:
+    properties:
+      accrual:
+        example: 500
+        type: number
+      order_number:
+        example: "49927398716"
+        type: string
+      status:
+        example: NEW
+        type: string
+      uploaded_at:
+        example: "2020-12-10T15:12:01+03:00"
         type: string
     type: object
   dto.UserLoginRequestDTO:
     properties:
       login:
+        example: login
         type: string
       password:
+        example: password
         type: string
     type: object
 info:
@@ -43,24 +62,18 @@ paths:
             $ref: '#/definitions/controller.LoginResponseDto'
         "400":
           description: Bad request
-          schema:
-            type: string
         "401":
           description: Unauthorized
-          schema:
-            type: string
         "500":
           description: Internal Server Error
-          schema:
-            type: string
       summary: Performs user login
       tags:
-      - user
-  /api/user/register:
-    post:
+      - auth
+  /api/user/orders:
+    get:
       consumes:
-      - application/json
-      description: Register new user
+      - text/plain
+      description: Fetch list of users orders
       parameters:
       - default: Bearer <Add access token here>
         description: Insert your access token
@@ -68,6 +81,68 @@ paths:
         name: Authorization
         required: true
         type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.OrderInfoDTO'
+            type: array
+        "204":
+          description: Accepted
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+      summary: Fetch list of users orders
+      tags:
+      - order
+    post:
+      consumes:
+      - text/plain
+      description: Add new user order to system
+      parameters:
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Order number
+        example: "49927398716"
+        in: body
+        name: data
+        required: true
+        schema:
+          type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+        "202":
+          description: Accepted
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+        "409":
+          description: Conflict
+        "422":
+          description: Unprocessable Entity
+        "500":
+          description: Internal Server Error
+      summary: Add new order
+      tags:
+      - order
+  /api/user/register:
+    post:
+      consumes:
+      - application/json
+      description: Register new user
+      parameters:
       - description: Body params
         in: body
         name: data
@@ -79,21 +154,13 @@ paths:
       responses:
         "200":
           description: OK
-          schema:
-            type: string
         "400":
           description: Bad request
-          schema:
-            type: string
         "409":
-          description: User already exists
-          schema:
-            type: string
+          description: Conflict
         "500":
           description: Internal Server Error
-          schema:
-            type: string
       summary: Register new user
       tags:
-      - user
+      - auth
 swagger: "2.0"

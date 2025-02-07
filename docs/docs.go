@@ -25,7 +25,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "user"
+                    "auth"
                 ],
                 "summary": "Performs user login",
                 "parameters": [
@@ -35,7 +35,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UserLoginRequestDTO"
+                            "$ref": "#/definitions/dto.UserCredentialsDTO"
                         }
                     }
                 ],
@@ -47,22 +47,114 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Bad request"
                     },
                     "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Unauthorized"
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/user/orders": {
+            "get": {
+                "description": "Fetch list of users orders",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "order"
+                ],
+                "summary": "Fetch list of users orders",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.OrderInfoDTO"
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "Accepted"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            },
+            "post": {
+                "description": "Add new user order to system",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "order"
+                ],
+                "summary": "Add new order",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "example": "49927398716",
+                        "description": "Order number",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
                         "schema": {
                             "type": "string"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "202": {
+                        "description": "Accepted"
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "409": {
+                        "description": "Conflict"
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
                     }
                 }
             }
@@ -77,18 +169,10 @@ const docTemplate = `{
                     "text/plain"
                 ],
                 "tags": [
-                    "user"
+                    "auth"
                 ],
                 "summary": "Register new user",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "default": "Bearer \u003cAdd access token here\u003e",
-                        "description": "Insert your access token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "description": "Body params",
                         "name": "data",
@@ -101,28 +185,16 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "OK"
                     },
                     "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Bad request"
                     },
                     "409": {
-                        "description": "User already exists",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Conflict"
                     },
                     "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Internal Server Error"
                     }
                 }
             }
@@ -142,21 +214,46 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "login": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "login"
                 },
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "password"
                 }
             }
         },
-        "dto.UserLoginRequestDTO": {
+        "dto.OrderInfoDTO": {
+            "type": "object",
+            "properties": {
+                "accrual": {
+                    "type": "number",
+                    "example": 500
+                },
+                "order_number": {
+                    "type": "string",
+                    "example": "49927398716"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "NEW"
+                },
+                "uploaded_at": {
+                    "type": "string",
+                    "example": "2020-12-10T15:12:01+03:00"
+                }
+            }
+        },
+        "dto.UserCredentialsDTO": {
             "type": "object",
             "properties": {
                 "login": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "login"
                 },
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "password"
                 }
             }
         }

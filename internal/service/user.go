@@ -13,31 +13,31 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type Store interface {
+type UserRepo interface {
 	CreateNewUser(ctx context.Context, createDto *dto.CreateUserDTO) (*pgxstore.User, error)
 	GetUser(ctx context.Context, login string) (*pgxstore.User, error)
 }
 
-type Service struct {
-	logger log.Logger
-	cfg    *config.Config
-	store  Store
+type UserService struct {
+	logger   log.Logger
+	cfg      *config.Config
+	userRepo UserRepo
 }
 
 func NewUserService(
 	logger log.Logger,
 	cfg *config.Config,
-	store Store,
-) *Service {
-	return &Service{
+	userRepo UserRepo,
+) *UserService {
+	return &UserService{
 		logger,
 		cfg,
-		store,
+		userRepo,
 	}
 }
 
-func (s *Service) CreateUser(ctx context.Context, createReqDto *dto.CreateUserRequestDTO) error {
-	existed, err := s.store.GetUser(ctx, createReqDto.Login)
+func (s *UserService) CreateUser(ctx context.Context, createReqDto *dto.UserCredentialsDTO) error {
+	existed, err := s.userRepo.GetUser(ctx, createReqDto.Login)
 	if err != nil && !errors.Is(err, pgxstore.ErrNotFound) {
 		return fmt.Errorf("userService.createUser.getUser: %w", err)
 	}
@@ -55,15 +55,15 @@ func (s *Service) CreateUser(ctx context.Context, createReqDto *dto.CreateUserRe
 		PasswordHash: hashedPassword,
 	}
 
-	if _, createError := s.store.CreateNewUser(ctx, createDto); createError != nil {
-		return fmt.Errorf("userService.createUser.store.CreateNewUser: %w", createError)
+	if _, createError := s.userRepo.CreateNewUser(ctx, createDto); createError != nil {
+		return fmt.Errorf("userService.createUser.userRepo.CreateNewUser: %w", createError)
 	}
 
 	return nil
 }
 
-func (s *Service) AuthorizeUser(ctx context.Context, loginDto *dto.UserLoginRequestDTO) (string, error) {
-	user, err := s.store.GetUser(ctx, loginDto.Login)
+func (s *UserService) AuthorizeUser(ctx context.Context, loginDto *dto.UserCredentialsDTO) (string, error) {
+	user, err := s.userRepo.GetUser(ctx, loginDto.Login)
 	if err != nil {
 		if errors.Is(err, pgxstore.ErrNotFound) {
 			return "", ErrNotFound
@@ -82,7 +82,7 @@ func (s *Service) AuthorizeUser(ctx context.Context, loginDto *dto.UserLoginRequ
 	return newToken, nil
 }
 
-func (s *Service) hashPassword(password string) (string, error) {
+func (s *UserService) hashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return "", fmt.Errorf("cant hash password: %w", err)
@@ -90,14 +90,14 @@ func (s *Service) hashPassword(password string) (string, error) {
 	return string(bytes), err
 }
 
-func (s *Service) verifyPassword(password, hash string) bool {
+func (s *UserService) verifyPassword(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
 }
 
-func (s *Service) generateToken(id string) (string, error) {
+func (s *UserService) generateToken(id string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": id,
+		"userId": id,
 	})
 
 	t, err := token.SignedString([]byte(s.cfg.JWTSecret))
@@ -108,7 +108,7 @@ func (s *Service) generateToken(id string) (string, error) {
 	return t, nil
 }
 
-func (s *Service) VerifyToken(tokenString string) (bool, error) {
+func (s *UserService) VerifyToken(tokenString string) (bool, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return []byte(s.cfg.JWTSecret), nil
 	})

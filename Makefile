@@ -5,7 +5,7 @@ GOLANGCI_LINT_CACHE?=/tmp/gophermart
 
 .PHONY: build
 build:
-	go build -o ./cmd/gophermart/main ./cmd/gophermart
+	go build -o ./cmd/gophermart/gophermart ./cmd/gophermart
 
 .PHONY: run
 run:

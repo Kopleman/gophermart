@@ -35,7 +35,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UserLoginRequestDTO"
+                            "$ref": "#/definitions/dto.UserCredentialsDTO"
                         }
                     }
                 ],
@@ -244,7 +244,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UserLoginRequestDTO": {
+        "dto.UserCredentialsDTO": {
             "type": "object",
             "properties": {
                 "login": {

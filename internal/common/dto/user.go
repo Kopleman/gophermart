@@ -1,12 +1,8 @@
 package dto
 
-type UserLoginRequestDTO struct {
+type UserCredentialsDTO struct {
 	Login    string `json:"login" example:"login"`
 	Password string `json:"password" example:"password"`
-}
-
-type CreateUserRequestDTO struct {
-	UserLoginRequestDTO
 }
 
 type CreateUserDTO struct {

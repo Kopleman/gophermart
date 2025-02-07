@@ -36,7 +36,7 @@ func NewUserService(
 	}
 }
 
-func (s *UserService) CreateUser(ctx context.Context, createReqDto *dto.CreateUserRequestDTO) error {
+func (s *UserService) CreateUser(ctx context.Context, createReqDto *dto.UserCredentialsDTO) error {
 	existed, err := s.userRepo.GetUser(ctx, createReqDto.Login)
 	if err != nil && !errors.Is(err, pgxstore.ErrNotFound) {
 		return fmt.Errorf("userService.createUser.getUser: %w", err)
@@ -62,7 +62,7 @@ func (s *UserService) CreateUser(ctx context.Context, createReqDto *dto.CreateUs
 	return nil
 }
 
-func (s *UserService) AuthorizeUser(ctx context.Context, loginDto *dto.UserLoginRequestDTO) (string, error) {
+func (s *UserService) AuthorizeUser(ctx context.Context, loginDto *dto.UserCredentialsDTO) (string, error) {
 	user, err := s.userRepo.GetUser(ctx, loginDto.Login)
 	if err != nil {
 		if errors.Is(err, pgxstore.ErrNotFound) {

@@ -14,8 +14,8 @@ import (
 )
 
 type UserService interface {
-	CreateUser(ctx context.Context, createDto *dto.CreateUserRequestDTO) error
-	AuthorizeUser(ctx context.Context, loginDto *dto.UserLoginRequestDTO) (string, error)
+	CreateUser(ctx context.Context, createDto *dto.UserCredentialsDTO) error
+	AuthorizeUser(ctx context.Context, loginDto *dto.UserCredentialsDTO) (string, error)
 }
 
 type UserController struct {
@@ -45,15 +45,15 @@ type StatusResponseDto struct {
 //	@Tags			auth
 //	@Accept			json
 //	@Produce		plain
-//	@Param			data	body	dto.CreateUserRequestDTO	true	"Body params"
-//	@Success		200		"OK"
+//	@Param			data	body		dto.UserCredentialsDTO	true	"Body params"
+//	@Success		200		{object}	LoginResponseDto		"OK"
 //	@Failure		400		"Bad request"
 //	@Failure		409		"Conflict"
 //	@Failure		500		"Internal Server Error"
 //	@Router			/api/user/register [post]
 func (c *UserController) RegisterNewUser() fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
-		data := new(dto.CreateUserRequestDTO)
+		data := new(dto.UserCredentialsDTO)
 		if err := ctx.BodyParser(data); err != nil {
 			return fiber.ErrBadRequest
 		}
@@ -69,12 +69,36 @@ func (c *UserController) RegisterNewUser() fiber.Handler {
 			return fiber.ErrInternalServerError
 		}
 
-		return ctx.SendStatus(fiber.StatusOK)
+		return c.loginUser(ctx)
 	}
 }
 
 type LoginResponseDto struct {
 	Token string `json:"token" example:"some_token"`
+}
+
+func (c *UserController) loginUser(ctx *fiber.Ctx) error {
+	data := new(dto.UserCredentialsDTO)
+	if err := ctx.BodyParser(data); err != nil {
+		return fiber.ErrBadRequest
+	}
+	if err := c.validator.Struct(data); err != nil {
+		return fiber.ErrBadRequest
+	}
+
+	token, err := c.userService.AuthorizeUser(ctx.Context(), data)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidArguments) || errors.Is(err, service.ErrNotFound) {
+			return fiber.ErrUnauthorized
+		}
+		return fiber.ErrInternalServerError
+	}
+
+	authHeaderValue := "Bearer " + token
+	ctx.Append("Authorization", authHeaderValue)
+	return ctx.JSON(LoginResponseDto{
+		Token: token,
+	})
 }
 
 // LoginUser login user
@@ -92,23 +116,6 @@ type LoginResponseDto struct {
 //	@Router			/api/user/login [post]
 func (c *UserController) LoginUser() fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
-		data := new(dto.UserLoginRequestDTO)
-		if err := ctx.BodyParser(data); err != nil {
-			return fiber.ErrBadRequest
-		}
-		if err := c.validator.Struct(data); err != nil {
-			return fiber.ErrBadRequest
-		}
-
-		token, err := c.userService.AuthorizeUser(ctx.Context(), data)
-		if err != nil {
-			if errors.Is(err, service.ErrInvalidArguments) || errors.Is(err, service.ErrNotFound) {
-				return fiber.ErrUnauthorized
-			}
-			return fiber.ErrInternalServerError
-		}
-		return ctx.JSON(LoginResponseDto{
-			Token: token,
-		})
+		return c.loginUser(ctx)
 	}
 }

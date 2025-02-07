@@ -7,6 +7,7 @@ import (
 	"github.com/Kopleman/gophermart/internal/common/log"
 	"github.com/Kopleman/gophermart/internal/config"
 	"github.com/Kopleman/gophermart/internal/controller"
+	"github.com/Kopleman/gophermart/internal/middlerware"
 	"github.com/Kopleman/gophermart/internal/pgxstore"
 	"github.com/Kopleman/gophermart/internal/postgres"
 	"github.com/Kopleman/gophermart/internal/repo"
@@ -58,8 +59,10 @@ func (s *Server) Start(ctx context.Context) error {
 	validatorInstance := validator.New()
 
 	userService := service.NewUserService(s.logger, s.config, s.repos.User())
+	orderService := service.NewOrderService(s.logger, s.config, s.repos.Order())
 
 	userController := controller.NewUserController(s.logger, validatorInstance, s.config, userService)
+	orderController := controller.NewOrderController(s.logger, validatorInstance, s.config, orderService)
 
 	runTimeError := make(chan error, 1)
 
@@ -68,7 +71,11 @@ func (s *Server) Start(ctx context.Context) error {
 
 	s.app = app
 
-	s.applyRoutes(userController)
+	s.applyRoutes(
+		middlerware.NewAuthMiddleWare(s.config),
+		userController,
+		orderController,
+	)
 
 	go func() {
 		if listenAndServeErr := s.app.Listen(s.config.EndPoint); listenAndServeErr != nil {

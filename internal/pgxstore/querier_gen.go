@@ -18,7 +18,7 @@ type Querier interface {
 	GetUserById(ctx context.Context, id uuid.UUID) (*User, error)
 	GetUserByLogin(ctx context.Context, login string) (*User, error)
 	GetUserOrders(ctx context.Context, userID uuid.UUID) ([]*Order, error)
-	PutOrderForProcessing(ctx context.Context, orderID uuid.UUID) (*OrdersToProcess, error)
+	PutOrderForProcessing(ctx context.Context, orderNumber string) (*OrdersToProcess, error)
 }
 
 var _ Querier = (*Queries)(nil)

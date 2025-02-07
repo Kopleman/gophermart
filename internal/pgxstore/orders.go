@@ -67,7 +67,7 @@ func (p *PGXStore) CreateNewOrder(
 		return nil, nil, fmt.Errorf("pgxstore.CreateNewOrder could not create order: %w", createErr)
 	}
 
-	orderToProcess, putErr := p.PutOrderForProcessing(ctx, newOrder.ID)
+	orderToProcess, putErr := p.PutOrderForProcessing(ctx, createDTO.OrderNumber)
 	if putErr != nil {
 		return nil, nil, fmt.Errorf("pgxstore.CreateNewOrder could not create task for proccesing: %w", putErr)
 	}

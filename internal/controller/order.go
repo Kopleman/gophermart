@@ -49,15 +49,15 @@ func NewOrderController(
 //	@Tags			order
 //	@Accept			plain
 //	@Produce		plain
-//	@Param			Authorization	header		string	true	"Insert your access token"	default(Bearer <Add access token here>)
-//	@Param			data			body		string	true	"Body params"
-//	@Success		200				{string}	string	"OK"
-//	@Success		202				{string}	string	"Accepted"
-//	@Failure		400				{string}	string	"Bad request"
-//	@Failure		401				{string}	string	"Unauthorized"
-//	@Failure		409				{string}	string	"invalid order number"
-//	@Failure		422				{string}	string	"invalid order number"
-//	@Failure		500				{string}	string	"Internal Server Error"
+//	@Param			Authorization	header	string	true	"Insert your access token"	default(Bearer <Add access token here>)
+//	@Param			data			body	string	true	"Order number"				example(49927398716)
+//	@Success		200				"OK"
+//	@Success		202				"Accepted"
+//	@Failure		400				"Bad request"
+//	@Failure		401				"Unauthorized"
+//	@Failure		409				"Conflict"
+//	@Failure		422				"Unprocessable Entity"
+//	@Failure		500				"Internal Server Error"
 //	@Router			/api/user/orders [post]
 func (o *OrderController) AddOrder() fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
@@ -113,11 +113,11 @@ func (o *OrderController) AddOrder() fiber.Handler {
 //	@Tags			order
 //	@Accept			plain
 //	@Produce		plain
-//	@Param			Authorization	header		string	true	"Insert your access token"	default(Bearer <Add access token here>)
-//	@Success		200				{array}		dto.OrderInfoDTO
-//	@Success		204				{string}	string	"Accepted"
-//	@Failure		401				{string}	string	"Unauthorized"
-//	@Failure		500				{string}	string	"Internal Server Error"
+//	@Param			Authorization	header	string	true	"Insert your access token"	default(Bearer <Add access token here>)
+//	@Success		200				{array}	dto.OrderInfoDTO
+//	@Success		204				"Accepted"
+//	@Failure		401				"Unauthorized"
+//	@Failure		500				"Internal Server Error"
 //	@Router			/api/user/orders [get]
 func (o *OrderController) GetOrders() fiber.Handler {
 	return func(ctx *fiber.Ctx) error {

@@ -62,16 +62,10 @@ paths:
             $ref: '#/definitions/controller.LoginResponseDto'
         "400":
           description: Bad request
-          schema:
-            type: string
         "401":
           description: Unauthorized
-          schema:
-            type: string
         "500":
           description: Internal Server Error
-          schema:
-            type: string
       summary: Performs user login
       tags:
       - auth
@@ -98,16 +92,10 @@ paths:
             type: array
         "204":
           description: Accepted
-          schema:
-            type: string
         "401":
           description: Unauthorized
-          schema:
-            type: string
         "500":
           description: Internal Server Error
-          schema:
-            type: string
       summary: Fetch list of users orders
       tags:
       - order
@@ -122,7 +110,8 @@ paths:
         name: Authorization
         required: true
         type: string
-      - description: Body params
+      - description: Order number
+        example: "49927398716"
         in: body
         name: data
         required: true
@@ -133,32 +122,18 @@ paths:
       responses:
         "200":
           description: OK
-          schema:
-            type: string
         "202":
           description: Accepted
-          schema:
-            type: string
         "400":
           description: Bad request
-          schema:
-            type: string
         "401":
           description: Unauthorized
-          schema:
-            type: string
         "409":
-          description: invalid order number
-          schema:
-            type: string
+          description: Conflict
         "422":
-          description: invalid order number
-          schema:
-            type: string
+          description: Unprocessable Entity
         "500":
           description: Internal Server Error
-          schema:
-            type: string
       summary: Add new order
       tags:
       - order
@@ -179,20 +154,12 @@ paths:
       responses:
         "200":
           description: OK
-          schema:
-            type: string
         "400":
           description: Bad request
-          schema:
-            type: string
         "409":
-          description: User already exists
-          schema:
-            type: string
+          description: Conflict
         "500":
           description: Internal Server Error
-          schema:
-            type: string
       summary: Register new user
       tags:
       - auth

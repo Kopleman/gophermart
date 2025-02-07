@@ -47,22 +47,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Bad request"
                     },
                     "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Unauthorized"
                     },
                     "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Internal Server Error"
                     }
                 }
             }
@@ -101,22 +92,13 @@ const docTemplate = `{
                         }
                     },
                     "204": {
-                        "description": "Accepted",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Accepted"
                     },
                     "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Unauthorized"
                     },
                     "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Internal Server Error"
                     }
                 }
             },
@@ -142,7 +124,8 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Body params",
+                        "example": "49927398716",
+                        "description": "Order number",
                         "name": "data",
                         "in": "body",
                         "required": true,
@@ -153,46 +136,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "OK"
                     },
                     "202": {
-                        "description": "Accepted",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Accepted"
                     },
                     "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Bad request"
                     },
                     "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Unauthorized"
                     },
                     "409": {
-                        "description": "invalid order number",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Conflict"
                     },
                     "422": {
-                        "description": "invalid order number",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Unprocessable Entity"
                     },
                     "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Internal Server Error"
                     }
                 }
             }
@@ -223,28 +185,16 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "OK"
                     },
                     "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Bad request"
                     },
                     "409": {
-                        "description": "User already exists",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Conflict"
                     },
                     "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "description": "Internal Server Error"
                     }
                 }
             }

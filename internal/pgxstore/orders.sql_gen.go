@@ -18,8 +18,8 @@ RETURNING id, user_id, order_number, status, accrual, created_at, updated_at, de
 `
 
 type CreateOrderParams struct {
-	OrderNumber string    `db:"order_number" json:"order_number"`
 	UserID      uuid.UUID `db:"user_id" json:"user_id"`
+	OrderNumber string    `db:"order_number" json:"order_number"`
 }
 
 func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (*Order, error) {
@@ -92,16 +92,16 @@ func (q *Queries) GetUserOrders(ctx context.Context, userID uuid.UUID) ([]*Order
 }
 
 const PutOrderForProcessing = `-- name: PutOrderForProcessing :one
-INSERT INTO orders_to_process (order_id, process_status)
+INSERT INTO orders_to_process (order_number, process_status)
 VALUES ($1, 'NEW')
-RETURNING order_id, process_status, created_at, updated_at, deleted_at
+RETURNING order_number, process_status, created_at, updated_at, deleted_at
 `
 
-func (q *Queries) PutOrderForProcessing(ctx context.Context, orderID uuid.UUID) (*OrdersToProcess, error) {
-	row := q.db.QueryRow(ctx, PutOrderForProcessing, orderID)
+func (q *Queries) PutOrderForProcessing(ctx context.Context, orderNumber string) (*OrdersToProcess, error) {
+	row := q.db.QueryRow(ctx, PutOrderForProcessing, orderNumber)
 	var i OrdersToProcess
 	err := row.Scan(
-		&i.OrderID,
+		&i.OrderNumber,
 		&i.ProcessStatus,
 		&i.CreatedAt,
 		&i.UpdatedAt,

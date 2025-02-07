@@ -45,11 +45,11 @@ type StatusResponseDto struct {
 //	@Tags			auth
 //	@Accept			json
 //	@Produce		plain
-//	@Param			data	body		dto.CreateUserRequestDTO	true	"Body params"
-//	@Success		200		{string}	string						"OK"
-//	@Failure		400		{string}	string						"Bad request"
-//	@Failure		409		{string}	string						"User already exists"
-//	@Failure		500		{string}	string						"Internal Server Error"
+//	@Param			data	body	dto.CreateUserRequestDTO	true	"Body params"
+//	@Success		200		"OK"
+//	@Failure		400		"Bad request"
+//	@Failure		409		"Conflict"
+//	@Failure		500		"Internal Server Error"
 //	@Router			/api/user/register [post]
 func (c *UserController) RegisterNewUser() fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
@@ -86,9 +86,9 @@ type LoginResponseDto struct {
 //	@Produce		json
 //	@Param			data	body		dto.UserLoginRequestDTO	true	"Body params"
 //	@Success		200		{object}	LoginResponseDto		"OK"
-//	@Failure		400		{string}	string					"Bad request"
-//	@Failure		401		{string}	string					"Unauthorized"
-//	@Failure		500		{string}	string					"Internal Server Error"
+//	@Failure		400		"Bad request"
+//	@Failure		401		"Unauthorized"
+//	@Failure		500		"Internal Server Error"
 //	@Router			/api/user/login [post]
 func (c *UserController) LoginUser() fiber.Handler {
 	return func(ctx *fiber.Ctx) error {

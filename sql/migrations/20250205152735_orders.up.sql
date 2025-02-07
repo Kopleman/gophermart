@@ -19,10 +19,10 @@ CREATE TYPE PROCESS_STATUS_TYPE AS ENUM ('NEW', 'PROCESSING', 'PROCESSED');
 
 CREATE TABLE IF NOT EXISTS orders_to_process
 (
-    order_id       uuid REFERENCES orders (id) NOT NULL,
-    process_status PROCESS_STATUS_TYPE         NOT NULL,
-    created_at     TIMESTAMP                   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at     TIMESTAMP                   NULL,
-    deleted_at     TIMESTAMP                   NULL,
-    CONSTRAINT order_id_uniq UNIQUE (order_id)
+    order_number   VARCHAR(255) REFERENCES orders (order_number) NOT NULL,
+    process_status PROCESS_STATUS_TYPE                           NOT NULL,
+    created_at     TIMESTAMP                                     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at     TIMESTAMP                                     NULL,
+    deleted_at     TIMESTAMP                                     NULL,
+    CONSTRAINT process_order_number_uniq UNIQUE (order_number)
 );

@@ -5,14 +5,14 @@ definitions:
         example: some_token
         type: string
     type: object
-  dto.CreateUserRequestDTO:
+  dto.BalanceDTO:
     properties:
-      login:
-        example: login
-        type: string
-      password:
-        example: password
-        type: string
+      current:
+        example: 500.5
+        type: number
+      withdrawn:
+        example: 42
+        type: number
     type: object
   dto.OrderInfoDTO:
     properties:
@@ -29,7 +29,7 @@ definitions:
         example: "2020-12-10T15:12:01+03:00"
         type: string
     type: object
-  dto.UserLoginRequestDTO:
+  dto.UserCredentialsDTO:
     properties:
       login:
         example: login
@@ -37,10 +37,102 @@ definitions:
       password:
         example: password
         type: string
+    required:
+    - login
+    - password
+    type: object
+  dto.WithdrawRequestDTO:
+    properties:
+      order:
+        example: "49927398716"
+        type: string
+      sum:
+        example: 100.2
+        type: number
+    required:
+    - order
+    - sum
+    type: object
+  dto.WithdrawalItemDTO:
+    properties:
+      order:
+        example: "49927398716"
+        type: string
+      processed_at:
+        example: "2020-12-10T15:12:01+03:00"
+        type: string
+      sum:
+        example: 100.2
+        type: number
+    required:
+    - order
+    - sum
     type: object
 info:
   contact: {}
 paths:
+  /api/user/balance:
+    get:
+      consumes:
+      - text/plain
+      description: Fetch user's balance
+      parameters:
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BalanceDTO'
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+      summary: Fetch user's balance
+      tags:
+      - user
+  /api/user/balance/withdraw:
+    post:
+      consumes:
+      - application/json
+      description: Make withdraw from users balance
+      parameters:
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Body params
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/dto.WithdrawRequestDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+        "402":
+          description: Payment Required
+        "422":
+          description: Unprocessable Entity
+        "500":
+          description: Internal Server Error
+      summary: Make withdraw from users balance
+      tags:
+      - user
   /api/user/login:
     post:
       consumes:
@@ -52,7 +144,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/dto.UserLoginRequestDTO'
+          $ref: '#/definitions/dto.UserCredentialsDTO'
       produces:
       - application/json
       responses:
@@ -148,12 +240,14 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/dto.CreateUserRequestDTO'
+          $ref: '#/definitions/dto.UserCredentialsDTO'
       produces:
       - text/plain
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/controller.LoginResponseDto'
         "400":
           description: Bad request
         "409":
@@ -163,4 +257,34 @@ paths:
       summary: Register new user
       tags:
       - auth
+  /api/user/withdrawals:
+    post:
+      consumes:
+      - text/plain
+      description: Fetch list of all user's withdrawals
+      parameters:
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.WithdrawalItemDTO'
+            type: array
+        "204":
+          description: No content
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+      summary: Fetch user's withdrawals
+      tags:
+      - user
 swagger: "2.0"

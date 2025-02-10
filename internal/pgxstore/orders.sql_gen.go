@@ -18,8 +18,8 @@ RETURNING id, user_id, order_number, status, accrual, created_at, updated_at, de
 `
 
 type CreateOrderParams struct {
-	UserID      uuid.UUID `db:"user_id" json:"user_id"`
 	OrderNumber string    `db:"order_number" json:"order_number"`
+	UserID      uuid.UUID `db:"user_id" json:"user_id"`
 }
 
 func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (*Order, error) {

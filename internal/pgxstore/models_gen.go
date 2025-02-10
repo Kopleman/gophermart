@@ -138,30 +138,102 @@ func AllProcessStatusTypeValues() []ProcessStatusType {
 	}
 }
 
+type TransactionType string
+
+const (
+	TransactionTypeDEPOSIT  TransactionType = "DEPOSIT"
+	TransactionTypeWITHDRAW TransactionType = "WITHDRAW"
+	TransactionTypeINIT     TransactionType = "INIT"
+)
+
+func (e *TransactionType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = TransactionType(s)
+	case string:
+		*e = TransactionType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for TransactionType: %T", src)
+	}
+	return nil
+}
+
+type NullTransactionType struct {
+	TransactionType TransactionType `json:"transaction_type"`
+	Valid           bool            `json:"valid"` // Valid is true if TransactionType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullTransactionType) Scan(value interface{}) error {
+	if value == nil {
+		ns.TransactionType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.TransactionType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullTransactionType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.TransactionType), nil
+}
+
+func (e TransactionType) Valid() bool {
+	switch e {
+	case TransactionTypeDEPOSIT,
+		TransactionTypeWITHDRAW,
+		TransactionTypeINIT:
+		return true
+	}
+	return false
+}
+
+func AllTransactionTypeValues() []TransactionType {
+	return []TransactionType{
+		TransactionTypeDEPOSIT,
+		TransactionTypeWITHDRAW,
+		TransactionTypeINIT,
+	}
+}
+
 type Order struct {
-	ID          uuid.UUID       `db:"id" json:"id"`
-	UserID      uuid.UUID       `db:"user_id" json:"user_id"`
-	OrderNumber string          `db:"order_number" json:"order_number"`
-	Status      OrderStatusType `db:"status" json:"status"`
-	Accrual     decimal.Decimal `db:"accrual" json:"accrual"`
 	CreatedAt   time.Time       `db:"created_at" json:"created_at"`
 	UpdatedAt   *time.Time      `db:"updated_at" json:"updated_at"`
 	DeletedAt   *time.Time      `db:"deleted_at" json:"deleted_at"`
+	OrderNumber string          `db:"order_number" json:"order_number"`
+	Status      OrderStatusType `db:"status" json:"status"`
+	Accrual     decimal.Decimal `db:"accrual" json:"accrual"`
+	ID          uuid.UUID       `db:"id" json:"id"`
+	UserID      uuid.UUID       `db:"user_id" json:"user_id"`
 }
 
 type OrdersToProcess struct {
-	OrderNumber   string            `db:"order_number" json:"order_number"`
-	ProcessStatus ProcessStatusType `db:"process_status" json:"process_status"`
 	CreatedAt     time.Time         `db:"created_at" json:"created_at"`
 	UpdatedAt     *time.Time        `db:"updated_at" json:"updated_at"`
 	DeletedAt     *time.Time        `db:"deleted_at" json:"deleted_at"`
+	OrderNumber   string            `db:"order_number" json:"order_number"`
+	ProcessStatus ProcessStatusType `db:"process_status" json:"process_status"`
+}
+
+type Transaction struct {
+	OrderNumber *string         `db:"order_number" json:"order_number"`
+	CreatedAt   *time.Time      `db:"created_at" json:"created_at"`
+	OldBalance  decimal.Decimal `db:"old_balance" json:"old_balance"`
+	Change      decimal.Decimal `db:"change" json:"change"`
+	NewBalance  decimal.Decimal `db:"new_balance" json:"new_balance"`
+	Type        TransactionType `db:"type" json:"type"`
+	ID          uuid.UUID       `db:"id" json:"id"`
+	UserID      uuid.UUID       `db:"user_id" json:"user_id"`
 }
 
 type User struct {
-	ID           uuid.UUID  `db:"id" json:"id"`
-	Login        string     `db:"login" json:"login"`
-	PasswordHash string     `db:"password_hash" json:"password_hash"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	UpdatedAt    *time.Time `db:"updated_at" json:"updated_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
+	Login        string     `db:"login" json:"login"`
+	PasswordHash string     `db:"password_hash" json:"password_hash"`
+	ID           uuid.UUID  `db:"id" json:"id"`
 }

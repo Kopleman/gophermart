@@ -60,9 +60,11 @@ func (s *Server) Start(ctx context.Context) error {
 
 	userService := service.NewUserService(s.logger, s.config, s.repos.User())
 	orderService := service.NewOrderService(s.logger, s.config, s.repos.Order())
+	balanceService := service.NewBalanceService(s.logger, s.config, s.repos.Balance())
 
 	userController := controller.NewUserController(s.logger, validatorInstance, s.config, userService)
 	orderController := controller.NewOrderController(s.logger, validatorInstance, s.config, orderService)
+	balanceController := controller.NewBalanceController(s.logger, validatorInstance, s.config, balanceService)
 
 	runTimeError := make(chan error, 1)
 
@@ -75,6 +77,7 @@ func (s *Server) Start(ctx context.Context) error {
 		middlerware.NewAuthMiddleWare(s.config),
 		userController,
 		orderController,
+		balanceController,
 	)
 
 	go func() {

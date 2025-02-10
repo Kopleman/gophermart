@@ -39,7 +39,10 @@ func (r *OrderRepo) CreateOrder(
 	ctx context.Context,
 	createDTO *dto.CreateOrderDTO,
 ) (*pgxstore.Order, *pgxstore.OrdersToProcess, error) {
-	order, orderToProcess, err := r.store.CreateNewOrder(ctx, createDTO)
+	order, orderToProcess, err := r.store.CreateNewOrder(ctx, pgxstore.CreateOrderParams{
+		UserID:      createDTO.UserID,
+		OrderNumber: createDTO.OrderNumber,
+	})
 	if err != nil {
 		return nil, nil, fmt.Errorf("create order: %w", err)
 	}

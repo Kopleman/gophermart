@@ -10,12 +10,14 @@ import (
 	"github.com/Kopleman/gophermart/internal/config"
 	"github.com/Kopleman/gophermart/internal/pgxstore"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type UserRepo interface {
 	CreateNewUser(ctx context.Context, createDto *dto.CreateUserDTO) (*pgxstore.User, error)
 	GetUser(ctx context.Context, login string) (*pgxstore.User, error)
+	GetUserWithdrawals(ctx context.Context, userID uuid.UUID) ([]*pgxstore.Transaction, error)
 }
 
 type UserService struct {
@@ -108,13 +110,14 @@ func (s *UserService) generateToken(id string) (string, error) {
 	return t, nil
 }
 
-func (s *UserService) VerifyToken(tokenString string) (bool, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return []byte(s.cfg.JWTSecret), nil
-	})
+func (s *UserService) GetWithdrawals(ctx context.Context, userID uuid.UUID) ([]*dto.WithdrawalItemDTO, error) {
+	withdrawalTxs, err := s.userRepo.GetUserWithdrawals(ctx, userID)
 	if err != nil {
-		return false, fmt.Errorf("cant parse token: %w", err)
+		return nil, fmt.Errorf("userService.GetWithdrawals: %w", err)
 	}
-
-	return token.Valid, nil
+	dtos := make([]*dto.WithdrawalItemDTO, len(withdrawalTxs))
+	for i, withdrawal := range withdrawalTxs {
+		dtos[i] = withdrawal.ToWithdrawalItemDTO()
+	}
+	return dtos, nil
 }

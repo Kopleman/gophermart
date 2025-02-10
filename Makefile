@@ -1,7 +1,7 @@
 -include .env
 
 MIGRATIONS_DIR   = ./sql/migrations/
-GOLANGCI_LINT_CACHE?=/tmp/gophermart
+GOLANGCI_LINT_CACHE?=/tmp/${APP_NAME}
 
 .PHONY: build
 build:

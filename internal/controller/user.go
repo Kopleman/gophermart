@@ -7,15 +7,17 @@ import (
 	"github.com/Kopleman/gophermart/internal/common/dto"
 	"github.com/Kopleman/gophermart/internal/common/log"
 	"github.com/Kopleman/gophermart/internal/config"
+	"github.com/Kopleman/gophermart/internal/middlerware"
 	"github.com/Kopleman/gophermart/internal/service"
 	"github.com/go-playground/validator/v10"
-
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
 type UserService interface {
 	CreateUser(ctx context.Context, createDto *dto.UserCredentialsDTO) error
 	AuthorizeUser(ctx context.Context, loginDto *dto.UserCredentialsDTO) (string, error)
+	GetWithdrawals(ctx context.Context, userID uuid.UUID) ([]*dto.WithdrawalItemDTO, error)
 }
 
 type UserController struct {
@@ -108,7 +110,7 @@ func (c *UserController) loginUser(ctx *fiber.Ctx) error {
 //	@Tags			auth
 //	@Accept			json
 //	@Produce		json
-//	@Param			data	body		dto.UserLoginRequestDTO	true	"Body params"
+//	@Param			data	body		dto.UserCredentialsDTO	true	"Body params"
 //	@Success		200		{object}	LoginResponseDto		"OK"
 //	@Failure		400		"Bad request"
 //	@Failure		401		"Unauthorized"
@@ -117,5 +119,39 @@ func (c *UserController) loginUser(ctx *fiber.Ctx) error {
 func (c *UserController) LoginUser() fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		return c.loginUser(ctx)
+	}
+}
+
+// GetWithdrawals Fetch user's withdrawals
+//
+//	@Summary		Fetch user's withdrawals
+//	@Description	Fetch list of all user's withdrawals
+//	@Tags			user
+//	@Accept			plain
+//	@Produce		json
+//	@Param			Authorization	header	string	true	"Insert your access token"	default(Bearer <Add access token here>)
+//	@Success		200				{array}	dto.WithdrawalItemDTO
+//	@Failure		204				"No content"
+//	@Failure		401				"Unauthorized"
+//	@Failure		500				"Internal Server Error"
+//	@Router			/api/user/withdrawals [post]
+func (c *UserController) GetWithdrawals() fiber.Handler {
+	return func(ctx *fiber.Ctx) error {
+		userID, err := middlerware.GetUserID(ctx)
+		if err != nil {
+			c.logger.Errorf("GetWithdrawals get userID: %w", err)
+			return fiber.ErrUnauthorized
+		}
+
+		withdrawals, withdrawalsErr := c.userService.GetWithdrawals(ctx.Context(), userID)
+		if withdrawalsErr != nil {
+			c.logger.Errorf("GetWithdrawals get withdrawals: %w", withdrawalsErr)
+			return fiber.ErrInternalServerError
+		}
+		if len(withdrawals) == 0 {
+			return ctx.SendStatus(fiber.StatusNoContent)
+		}
+
+		return ctx.JSON(withdrawals)
 	}
 }

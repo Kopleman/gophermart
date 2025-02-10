@@ -12,6 +12,7 @@ func (s *Server) applyRoutes(
 	authMiddleware fiber.Handler,
 	userController *controller.UserController,
 	orderController *controller.OrderController,
+	balanceController *controller.BalanceController,
 ) {
 	docs.SwaggerInfo.Host = s.config.EndPoint
 
@@ -22,6 +23,10 @@ func (s *Server) applyRoutes(
 	userGroup := apiRouter.Group("/user")
 	userGroup.Post("/register", userController.RegisterNewUser())
 	userGroup.Post("/login", userController.LoginUser())
+	userGroup.Post("/withdrawals", authMiddleware, userController.GetWithdrawals())
+	balanceGroup := userGroup.Group("/balance", authMiddleware)
+	balanceGroup.Get("/", balanceController.GetUserBalance())
+	balanceGroup.Post("/withdraw", balanceController.MakeWithdraw())
 	orderGroup := userGroup.Group("/", authMiddleware)
 	orderGroup.Post("/orders", orderController.AddOrder())
 	orderGroup.Get("/orders", orderController.GetOrders())

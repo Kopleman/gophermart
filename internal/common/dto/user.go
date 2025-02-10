@@ -1,8 +1,8 @@
 package dto
 
 type UserCredentialsDTO struct {
-	Login    string `json:"login" example:"login"`
-	Password string `json:"password" example:"password"`
+	Login    string `json:"login" validate:"required" example:"login"`
+	Password string `json:"password" validate:"required" example:"password"`
 }
 
 type CreateUserDTO struct {

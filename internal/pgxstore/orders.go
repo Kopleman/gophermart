@@ -50,7 +50,7 @@ func (o *Order) ToDTO() *dto.OrderDTO {
 
 func (p *PGXStore) CreateNewOrder(
 	ctx context.Context,
-	createDTO *dto.CreateOrderDTO,
+	createParams CreateOrderParams,
 ) (*Order, *OrdersToProcess, error) {
 	tx, err := p.startTx(ctx, &pgx.TxOptions{})
 	if err != nil {
@@ -58,16 +58,12 @@ func (p *PGXStore) CreateNewOrder(
 	}
 	defer tx.Rollback(ctx) //nolint:all // its safe
 
-	createParams := CreateOrderParams{
-		UserID:      createDTO.UserID,
-		OrderNumber: createDTO.OrderNumber,
-	}
 	newOrder, createErr := p.CreateOrder(ctx, createParams)
 	if createErr != nil {
 		return nil, nil, fmt.Errorf("pgxstore.CreateNewOrder could not create order: %w", createErr)
 	}
 
-	orderToProcess, putErr := p.PutOrderForProcessing(ctx, createDTO.OrderNumber)
+	orderToProcess, putErr := p.PutOrderForProcessing(ctx, createParams.OrderNumber)
 	if putErr != nil {
 		return nil, nil, fmt.Errorf("pgxstore.CreateNewOrder could not create task for proccesing: %w", putErr)
 	}

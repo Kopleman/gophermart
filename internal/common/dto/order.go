@@ -20,18 +20,18 @@ type CreateOrderDTO struct {
 }
 
 type OrderInfoDTO struct {
-	OrderNumber string   `json:"order_number" example:"49927398716"`
-	Status      string   `json:"status" example:"NEW"`
-	Accrual     *float64 `json:"accrual,omitempty" example:"500"`
-	UploadedAt  string   `json:"uploaded_at" example:"2020-12-10T15:12:01+03:00"`
+	Number     string   `json:"number" example:"49927398716"`
+	Status     string   `json:"status" example:"NEW"`
+	Accrual    *float64 `json:"accrual,omitempty" example:"500"`
+	UploadedAt string   `json:"uploaded_at" example:"2020-12-10T15:12:01+03:00"`
 }
 
 func (o *OrderDTO) ToInfoDTO() *OrderInfoDTO {
 	dto := OrderInfoDTO{
-		OrderNumber: o.OrderNumber,
-		Status:      o.Status,
-		UploadedAt:  o.CreatedAt,
-		Accrual:     nil,
+		Number:     o.OrderNumber,
+		Status:     o.Status,
+		UploadedAt: o.CreatedAt,
+		Accrual:    nil,
 	}
 	if o.Accrual.GreaterThan(decimal.Zero) {
 		value, _ := o.Accrual.Float64()

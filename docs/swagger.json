@@ -4,6 +4,99 @@
         "contact": {}
     },
     "paths": {
+        "/api/user/balance": {
+            "get": {
+                "description": "Fetch user's balance",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Fetch user's balance",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BalanceDTO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/user/balance/withdraw": {
+            "post": {
+                "description": "Make withdraw from users balance",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Make withdraw from users balance",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Body params",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.WithdrawRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "402": {
+                        "description": "Payment Required"
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/api/user/login": {
             "post": {
                 "description": "Performs user login, returns jwt token",
@@ -24,7 +117,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UserLoginRequestDTO"
+                            "$ref": "#/definitions/dto.UserCredentialsDTO"
                         }
                     }
                 ],
@@ -168,19 +261,67 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateUserRequestDTO"
+                            "$ref": "#/definitions/dto.UserCredentialsDTO"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/controller.LoginResponseDto"
+                        }
                     },
                     "400": {
                         "description": "Bad request"
                     },
                     "409": {
                         "description": "Conflict"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/user/withdrawals": {
+            "post": {
+                "description": "Fetch list of all user's withdrawals",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Fetch user's withdrawals",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.WithdrawalItemDTO"
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "No content"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
                     },
                     "500": {
                         "description": "Internal Server Error"
@@ -199,16 +340,16 @@
                 }
             }
         },
-        "dto.CreateUserRequestDTO": {
+        "dto.BalanceDTO": {
             "type": "object",
             "properties": {
-                "login": {
-                    "type": "string",
-                    "example": "login"
+                "current": {
+                    "type": "number",
+                    "example": 500.5
                 },
-                "password": {
-                    "type": "string",
-                    "example": "password"
+                "withdrawn": {
+                    "type": "number",
+                    "example": 42
                 }
             }
         },
@@ -233,8 +374,12 @@
                 }
             }
         },
-        "dto.UserLoginRequestDTO": {
+        "dto.UserCredentialsDTO": {
             "type": "object",
+            "required": [
+                "login",
+                "password"
+            ],
             "properties": {
                 "login": {
                     "type": "string",
@@ -243,6 +388,44 @@
                 "password": {
                     "type": "string",
                     "example": "password"
+                }
+            }
+        },
+        "dto.WithdrawRequestDTO": {
+            "type": "object",
+            "required": [
+                "order",
+                "sum"
+            ],
+            "properties": {
+                "order": {
+                    "type": "string",
+                    "example": "49927398716"
+                },
+                "sum": {
+                    "type": "number",
+                    "example": 100.2
+                }
+            }
+        },
+        "dto.WithdrawalItemDTO": {
+            "type": "object",
+            "required": [
+                "order",
+                "sum"
+            ],
+            "properties": {
+                "order": {
+                    "type": "string",
+                    "example": "49927398716"
+                },
+                "processed_at": {
+                    "type": "string",
+                    "example": "2020-12-10T15:12:01+03:00"
+                },
+                "sum": {
+                    "type": "number",
+                    "example": 100.2
                 }
             }
         }

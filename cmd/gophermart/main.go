@@ -38,7 +38,7 @@ func run(logger log.Logger) {
 	// Start server
 	go func(ctx context.Context) {
 		if serverStartError := srv.Start(ctx); serverStartError != nil {
-			logger.Fatalf("start server error: %v", serverStartError)
+			logger.Fatalf("server error: %v", serverStartError)
 		}
 		cancel()
 	}(ctx)

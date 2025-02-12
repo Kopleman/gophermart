@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Kopleman/gophermart/internal/accrual"
+	httpclient "github.com/Kopleman/gophermart/internal/common/http-client"
 	"github.com/Kopleman/gophermart/internal/common/log"
 	"github.com/Kopleman/gophermart/internal/config"
 	"github.com/Kopleman/gophermart/internal/controller"
@@ -24,6 +26,7 @@ type Server struct {
 	pgxStore *pgxstore.PGXStore
 	app      *fiber.App
 	repos    *repo.Repos
+	accrual  *accrual.Accrual
 }
 
 func NewServer(logger log.Logger, cfg *config.Config) *Server {
@@ -49,8 +52,7 @@ func (s *Server) prepareStore(ctx context.Context) error {
 	return nil
 }
 
-func (s *Server) Start(ctx context.Context) error {
-	defer s.Shutdown()
+func (s *Server) Start(ctx context.Context, runTimeError chan<- error) error {
 	if err := s.prepareStore(ctx); err != nil {
 		return fmt.Errorf("failed to prepare store: %w", err)
 	}
@@ -66,8 +68,6 @@ func (s *Server) Start(ctx context.Context) error {
 	orderController := controller.NewOrderController(s.logger, validatorInstance, s.config, orderService)
 	balanceController := controller.NewBalanceController(s.logger, validatorInstance, s.config, balanceService)
 
-	runTimeError := make(chan error, 1)
-
 	app := fiber.New()
 	app.Use(fiberLogger.New())
 
@@ -79,20 +79,21 @@ func (s *Server) Start(ctx context.Context) error {
 		orderController,
 		balanceController,
 	)
+	httpClient := httpclient.NewHTTPClient(s.config.AccrualEndPoint+"/api/orders", s.logger, true)
+	s.accrual = accrual.New(s.logger, s.config, s.repos.Order(), httpClient)
 
 	go func() {
 		if listenAndServeErr := s.app.Listen(s.config.EndPoint); listenAndServeErr != nil {
 			runTimeError <- fmt.Errorf("internal server error: %w", listenAndServeErr)
 		}
 	}()
+
+	go func() {
+		if accrualErr := s.accrual.Run(ctx); accrualErr != nil {
+			runTimeError <- fmt.Errorf("accrual error: %w", accrualErr)
+		}
+	}()
 	s.logger.Infof("Server started on: %s", s.config.EndPoint)
-
-	serverError := <-runTimeError
-	if serverError != nil {
-		return fmt.Errorf("server error: %w", serverError)
-	}
-
-	<-ctx.Done()
 
 	return nil
 }

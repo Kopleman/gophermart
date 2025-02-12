@@ -42,11 +42,11 @@ RETURNING id, order_number, user_id, old_balance, change, new_balance, type, cre
 
 type CreateTransactionParams struct {
 	OrderNumber *string         `db:"order_number" json:"order_number"`
+	UserID      uuid.UUID       `db:"user_id" json:"user_id"`
 	OldBalance  decimal.Decimal `db:"old_balance" json:"old_balance"`
 	Change      decimal.Decimal `db:"change" json:"change"`
 	NewBalance  decimal.Decimal `db:"new_balance" json:"new_balance"`
 	Type        TransactionType `db:"type" json:"type"`
-	UserID      uuid.UUID       `db:"user_id" json:"user_id"`
 }
 
 func (q *Queries) CreateTransaction(ctx context.Context, arg CreateTransactionParams) (*Transaction, error) {
@@ -102,10 +102,10 @@ SELECT id, order_number, user_id, old_balance, change, new_balance, type, create
 `
 
 type GetTransactionsParams struct {
-	Type     TransactionType `db:"type" json:"type"`
-	UserID   uuid.UUID       `db:"user_id" json:"user_id"`
 	IsUserID bool            `db:"is_user_id" json:"is_user_id"`
+	UserID   uuid.UUID       `db:"user_id" json:"user_id"`
 	IsType   bool            `db:"is_type" json:"is_type"`
+	Type     TransactionType `db:"type" json:"type"`
 }
 
 func (q *Queries) GetTransactions(ctx context.Context, arg GetTransactionsParams) ([]*Transaction, error) {

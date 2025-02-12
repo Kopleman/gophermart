@@ -80,9 +80,10 @@ func AllOrderStatusTypeValues() []OrderStatusType {
 type ProcessStatusType string
 
 const (
-	ProcessStatusTypeNEW        ProcessStatusType = "NEW"
-	ProcessStatusTypePROCESSING ProcessStatusType = "PROCESSING"
-	ProcessStatusTypePROCESSED  ProcessStatusType = "PROCESSED"
+	ProcessStatusTypeNEW             ProcessStatusType = "NEW"
+	ProcessStatusTypeSTARTPROCESSING ProcessStatusType = "START_PROCESSING"
+	ProcessStatusTypeREGISTERED      ProcessStatusType = "REGISTERED"
+	ProcessStatusTypePROCESSED       ProcessStatusType = "PROCESSED"
 )
 
 func (e *ProcessStatusType) Scan(src interface{}) error {
@@ -123,7 +124,8 @@ func (ns NullProcessStatusType) Value() (driver.Value, error) {
 func (e ProcessStatusType) Valid() bool {
 	switch e {
 	case ProcessStatusTypeNEW,
-		ProcessStatusTypePROCESSING,
+		ProcessStatusTypeSTARTPROCESSING,
+		ProcessStatusTypeREGISTERED,
 		ProcessStatusTypePROCESSED:
 		return true
 	}
@@ -133,7 +135,8 @@ func (e ProcessStatusType) Valid() bool {
 func AllProcessStatusTypeValues() []ProcessStatusType {
 	return []ProcessStatusType{
 		ProcessStatusTypeNEW,
-		ProcessStatusTypePROCESSING,
+		ProcessStatusTypeSTARTPROCESSING,
+		ProcessStatusTypeREGISTERED,
 		ProcessStatusTypePROCESSED,
 	}
 }
@@ -200,40 +203,40 @@ func AllTransactionTypeValues() []TransactionType {
 }
 
 type Order struct {
-	CreatedAt   time.Time       `db:"created_at" json:"created_at"`
-	UpdatedAt   *time.Time      `db:"updated_at" json:"updated_at"`
-	DeletedAt   *time.Time      `db:"deleted_at" json:"deleted_at"`
+	ID          uuid.UUID       `db:"id" json:"id"`
+	UserID      uuid.UUID       `db:"user_id" json:"user_id"`
 	OrderNumber string          `db:"order_number" json:"order_number"`
 	Status      OrderStatusType `db:"status" json:"status"`
 	Accrual     decimal.Decimal `db:"accrual" json:"accrual"`
-	ID          uuid.UUID       `db:"id" json:"id"`
-	UserID      uuid.UUID       `db:"user_id" json:"user_id"`
+	CreatedAt   time.Time       `db:"created_at" json:"created_at"`
+	UpdatedAt   *time.Time      `db:"updated_at" json:"updated_at"`
+	DeletedAt   *time.Time      `db:"deleted_at" json:"deleted_at"`
 }
 
 type OrdersToProcess struct {
+	OrderNumber   string            `db:"order_number" json:"order_number"`
+	ProcessStatus ProcessStatusType `db:"process_status" json:"process_status"`
 	CreatedAt     time.Time         `db:"created_at" json:"created_at"`
 	UpdatedAt     *time.Time        `db:"updated_at" json:"updated_at"`
 	DeletedAt     *time.Time        `db:"deleted_at" json:"deleted_at"`
-	OrderNumber   string            `db:"order_number" json:"order_number"`
-	ProcessStatus ProcessStatusType `db:"process_status" json:"process_status"`
 }
 
 type Transaction struct {
+	ID          uuid.UUID       `db:"id" json:"id"`
 	OrderNumber *string         `db:"order_number" json:"order_number"`
-	CreatedAt   *time.Time      `db:"created_at" json:"created_at"`
+	UserID      uuid.UUID       `db:"user_id" json:"user_id"`
 	OldBalance  decimal.Decimal `db:"old_balance" json:"old_balance"`
 	Change      decimal.Decimal `db:"change" json:"change"`
 	NewBalance  decimal.Decimal `db:"new_balance" json:"new_balance"`
 	Type        TransactionType `db:"type" json:"type"`
-	ID          uuid.UUID       `db:"id" json:"id"`
-	UserID      uuid.UUID       `db:"user_id" json:"user_id"`
+	CreatedAt   *time.Time      `db:"created_at" json:"created_at"`
 }
 
 type User struct {
+	ID           uuid.UUID  `db:"id" json:"id"`
+	Login        string     `db:"login" json:"login"`
+	PasswordHash string     `db:"password_hash" json:"password_hash"`
 	CreatedAt    time.Time  `db:"created_at" json:"created_at"`
 	UpdatedAt    *time.Time `db:"updated_at" json:"updated_at"`
 	DeletedAt    *time.Time `db:"deleted_at" json:"deleted_at"`
-	Login        string     `db:"login" json:"login"`
-	PasswordHash string     `db:"password_hash" json:"password_hash"`
-	ID           uuid.UUID  `db:"id" json:"id"`
 }

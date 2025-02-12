@@ -12,6 +12,9 @@ type configFromEnv struct {
 	AccrualEndPoint string `env:"ACCRUAL_SYSTEM_ADDRESS"`
 	DataBaseURI     string `env:"DATABASE_URI"`
 	JWTSecret       string `env:"JWT_SECRET"`
+	PollInterval    int64  `env:"POLL_INTERVAL"`
+	WorkerLimit     int64  `env:"WORKER_LIMIT"`
+	MaxOrdersInWork int64  `env:"MAX_ORDERS_IN_WORK"`
 }
 
 func getConfigFromEnv() (*configFromEnv, error) {

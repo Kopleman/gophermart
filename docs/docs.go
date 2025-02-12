@@ -296,7 +296,7 @@ const docTemplate = `{
             }
         },
         "/api/user/withdrawals": {
-            "post": {
+            "get": {
                 "description": "Fetch list of all user's withdrawals",
                 "consumes": [
                     "text/plain"
@@ -371,7 +371,7 @@ const docTemplate = `{
                     "type": "number",
                     "example": 500
                 },
-                "order_number": {
+                "number": {
                     "type": "string",
                     "example": "49927398716"
                 },

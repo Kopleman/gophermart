@@ -9,6 +9,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 )
 
 const CreateOrder = `-- name: CreateOrder :one
@@ -18,8 +19,8 @@ RETURNING id, user_id, order_number, status, accrual, created_at, updated_at, de
 `
 
 type CreateOrderParams struct {
-	OrderNumber string    `db:"order_number" json:"order_number"`
 	UserID      uuid.UUID `db:"user_id" json:"user_id"`
+	OrderNumber string    `db:"order_number" json:"order_number"`
 }
 
 func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (*Order, error) {
@@ -58,6 +59,66 @@ func (q *Queries) GetOrderByNumber(ctx context.Context, orderNumber string) (*Or
 	return &i, err
 }
 
+const GetRegisteredProcessingOrders = `-- name: GetRegisteredProcessingOrders :many
+SELECT order_number, process_status, created_at, updated_at, deleted_at from orders_to_process WHERE process_status = 'REGISTERED' ORDER BY created_at ASC LIMIT $1
+`
+
+func (q *Queries) GetRegisteredProcessingOrders(ctx context.Context, limit int32) ([]*OrdersToProcess, error) {
+	rows, err := q.db.Query(ctx, GetRegisteredProcessingOrders, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*OrdersToProcess{}
+	for rows.Next() {
+		var i OrdersToProcess
+		if err := rows.Scan(
+			&i.OrderNumber,
+			&i.ProcessStatus,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const GetStartProcessingOrders = `-- name: GetStartProcessingOrders :many
+SELECT order_number, process_status, created_at, updated_at, deleted_at from orders_to_process WHERE process_status = 'START_PROCESSING' ORDER BY created_at ASC
+`
+
+func (q *Queries) GetStartProcessingOrders(ctx context.Context) ([]*OrdersToProcess, error) {
+	rows, err := q.db.Query(ctx, GetStartProcessingOrders)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*OrdersToProcess{}
+	for rows.Next() {
+		var i OrdersToProcess
+		if err := rows.Scan(
+			&i.OrderNumber,
+			&i.ProcessStatus,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const GetUserOrders = `-- name: GetUserOrders :many
 SELECT id, user_id, order_number, status, accrual, created_at, updated_at, deleted_at FROM orders WHERE user_id=$1 ORDER BY created_at DESC
 `
@@ -91,6 +152,41 @@ func (q *Queries) GetUserOrders(ctx context.Context, userID uuid.UUID) ([]*Order
 	return items, nil
 }
 
+const PickOrdersToProcess = `-- name: PickOrdersToProcess :many
+UPDATE orders_to_process SET process_status = 'START_PROCESSING', updated_at = now()
+WHERE order_number IN (SELECT order_number
+    FROM orders_to_process
+    WHERE process_status = 'NEW' ORDER BY created_at ASC
+    LIMIT $1)
+RETURNING order_number, process_status, created_at, updated_at, deleted_at
+`
+
+func (q *Queries) PickOrdersToProcess(ctx context.Context, limit int32) ([]*OrdersToProcess, error) {
+	rows, err := q.db.Query(ctx, PickOrdersToProcess, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*OrdersToProcess{}
+	for rows.Next() {
+		var i OrdersToProcess
+		if err := rows.Scan(
+			&i.OrderNumber,
+			&i.ProcessStatus,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const PutOrderForProcessing = `-- name: PutOrderForProcessing :one
 INSERT INTO orders_to_process (order_number, process_status)
 VALUES ($1, 'NEW')
@@ -99,6 +195,58 @@ RETURNING order_number, process_status, created_at, updated_at, deleted_at
 
 func (q *Queries) PutOrderForProcessing(ctx context.Context, orderNumber string) (*OrdersToProcess, error) {
 	row := q.db.QueryRow(ctx, PutOrderForProcessing, orderNumber)
+	var i OrdersToProcess
+	err := row.Scan(
+		&i.OrderNumber,
+		&i.ProcessStatus,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return &i, err
+}
+
+const UpdateOrder = `-- name: UpdateOrder :one
+UPDATE orders SET status = $1, accrual = $2, updated_at = now()
+WHERE order_number = $3
+RETURNING id, user_id, order_number, status, accrual, created_at, updated_at, deleted_at
+`
+
+type UpdateOrderParams struct {
+	Status      OrderStatusType `db:"status" json:"status"`
+	Accrual     decimal.Decimal `db:"accrual" json:"accrual"`
+	OrderNumber string          `db:"order_number" json:"order_number"`
+}
+
+func (q *Queries) UpdateOrder(ctx context.Context, arg UpdateOrderParams) (*Order, error) {
+	row := q.db.QueryRow(ctx, UpdateOrder, arg.Status, arg.Accrual, arg.OrderNumber)
+	var i Order
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.OrderNumber,
+		&i.Status,
+		&i.Accrual,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return &i, err
+}
+
+const UpdateOrderToProcess = `-- name: UpdateOrderToProcess :one
+UPDATE orders_to_process SET process_status = $1, updated_at = now()
+WHERE order_number = $2
+RETURNING order_number, process_status, created_at, updated_at, deleted_at
+`
+
+type UpdateOrderToProcessParams struct {
+	ProcessStatus ProcessStatusType `db:"process_status" json:"process_status"`
+	OrderNumber   string            `db:"order_number" json:"order_number"`
+}
+
+func (q *Queries) UpdateOrderToProcess(ctx context.Context, arg UpdateOrderToProcessParams) (*OrdersToProcess, error) {
+	row := q.db.QueryRow(ctx, UpdateOrderToProcess, arg.ProcessStatus, arg.OrderNumber)
 	var i OrdersToProcess
 	err := row.Scan(
 		&i.OrderNumber,

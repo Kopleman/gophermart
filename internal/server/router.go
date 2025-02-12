@@ -23,7 +23,7 @@ func (s *Server) applyRoutes(
 	userGroup := apiRouter.Group("/user")
 	userGroup.Post("/register", userController.RegisterNewUser())
 	userGroup.Post("/login", userController.LoginUser())
-	userGroup.Post("/withdrawals", authMiddleware, userController.GetWithdrawals())
+	userGroup.Get("/withdrawals", authMiddleware, userController.GetWithdrawals())
 	balanceGroup := userGroup.Group("/balance", authMiddleware)
 	balanceGroup.Get("/", balanceController.GetUserBalance())
 	balanceGroup.Post("/withdraw", balanceController.MakeWithdraw())

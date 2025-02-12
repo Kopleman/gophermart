@@ -3,9 +3,6 @@ package httpclient
 import (
 	"bytes"
 	"compress/gzip"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -90,22 +87,6 @@ func (c *HTTPClient) Get(url, contentType string) ([]byte, error) {
 	}
 
 	return respBody, nil
-}
-
-func (c *HTTPClient) calcHashForBody(bodyBytes []byte) string {
-	if len(c.key) == 0 {
-		return ""
-	}
-	if len(bodyBytes) == 0 {
-		return ""
-	}
-
-	h := hmac.New(sha256.New, c.key)
-	h.Write(bodyBytes)
-	hash := h.Sum(nil)
-	hashString := base64.StdEncoding.EncodeToString(hash)
-
-	return hashString
 }
 
 type HTTPClient struct {

@@ -50,11 +50,7 @@ func (t *retryableTransport) shouldRetry(err error, resp *http.Response, retries
 }
 
 func (t *retryableTransport) retryCountExceed(retries int) bool {
-	if t.retryCount > retries {
-		return true
-	}
-
-	return false
+	return t.retryCount > retries
 }
 
 func closeBody(resp *http.Response) error {

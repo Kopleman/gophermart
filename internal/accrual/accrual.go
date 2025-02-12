@@ -50,13 +50,13 @@ func New(logger log.Logger, cfg *config.Config, repo OrderRepo, client HTTPClien
 }
 
 type processJobParams struct {
-	name                     string
+	nextJobTime              time.Time
 	tickerChan               <-chan time.Time
 	errorChan                chan<- error
-	nextJobTime              time.Time
-	interval                 time.Duration
 	ordersToProcessFetchFunc func(ctx context.Context, limit int32) ([]*pgxstore.OrdersToProcess, error)
 	backUpFunc               func(ctx context.Context, ordersChan chan *pgxstore.OrdersToProcess) error
+	name                     string
+	interval                 time.Duration
 }
 
 func noopBackupFunc(ctx context.Context, ordersChan chan *pgxstore.OrdersToProcess) error {
@@ -66,7 +66,7 @@ func noopBackupFunc(ctx context.Context, ordersChan chan *pgxstore.OrdersToProce
 func (a *Accrual) backUpProcessingJob(ctx context.Context, ordersChan chan *pgxstore.OrdersToProcess) error {
 	processedOrders, err := a.repo.GetStartProcessingOrders(ctx)
 	if err != nil {
-		return fmt.Errorf("backUpProcessingJob fetch: %v", err)
+		return fmt.Errorf("backUpProcessingJob fetch: %w", err)
 	}
 	a.logger.Infof("Amount of orders to process from last restart: %v", len(processedOrders))
 	for {
@@ -154,7 +154,7 @@ func (a *Accrual) processOrder(ctx context.Context, order *pgxstore.OrdersToProc
 	a.logger.Infof("Processing order: %s", order.OrderNumber)
 	accrualDto := new(dto.AccrualResponseDTO)
 	orderProcessed := false
-	for orderProcessed == false {
+	for !orderProcessed {
 		responseDto, err := a.sendRequestToAccrual(order.OrderNumber)
 		if err != nil {
 			return fmt.Errorf("processOrder: %w", err)
@@ -189,9 +189,13 @@ func (a *Accrual) processOrder(ctx context.Context, order *pgxstore.OrdersToProc
 	return nil
 }
 
-// this worker register new orders for calculation to Accrual.
-// it not handle calculation itself.
-func (a *Accrual) startRegisterOrdersToProcessWorker(ctx context.Context, ordersChan <-chan *pgxstore.OrdersToProcess, errorChan chan<- error) {
+// This worker register new orders for calculation to Accrual.
+// It not handle calculation itself.
+func (a *Accrual) startRegisterOrdersToProcessWorker(
+	ctx context.Context,
+	ordersChan <-chan *pgxstore.OrdersToProcess,
+	errorChan chan<- error,
+) {
 	for order := range ordersChan {
 		if err := a.registerOrder(ctx, order); err != nil {
 			errorChan <- fmt.Errorf("failed to register order: %w", err)
@@ -199,8 +203,12 @@ func (a *Accrual) startRegisterOrdersToProcessWorker(ctx context.Context, orders
 	}
 }
 
-// this worker fetch data from accrual to store deposit.
-func (a *Accrual) startProcessingOrdersToProcessWorker(ctx context.Context, ordersChan <-chan *pgxstore.OrdersToProcess, errorChan chan<- error) {
+// This worker fetch data from accrual to store deposit.
+func (a *Accrual) startProcessingOrdersToProcessWorker(
+	ctx context.Context,
+	ordersChan <-chan *pgxstore.OrdersToProcess,
+	errorChan chan<- error,
+) {
 	for order := range ordersChan {
 		if err := a.processOrder(ctx, order); err != nil {
 			errorChan <- fmt.Errorf("failed to register order: %w", err)
@@ -232,7 +240,6 @@ func (a *Accrual) Run(ctx context.Context) error {
 
 	maxWorkerCount := int(a.cfg.WorkerLimit)
 	spew.Dump(a.cfg)
-	//maxWorkerCount = 0
 
 	for w := 1; w <= maxWorkerCount; w++ {
 		go a.startRegisterOrdersToProcessWorker(innerCtx, ordersToRegisterChan, errChan)

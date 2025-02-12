@@ -73,7 +73,10 @@ func (r *OrderRepo) PickOrdersToProcess(ctx context.Context, limit int32) ([]*pg
 	return orders, nil
 }
 
-func (r *OrderRepo) GetRegisteredProcessingOrders(ctx context.Context, limit int32) ([]*pgxstore.OrdersToProcess, error) {
+func (r *OrderRepo) GetRegisteredProcessingOrders(
+	ctx context.Context,
+	limit int32,
+) ([]*pgxstore.OrdersToProcess, error) {
 	orders, err := r.store.GetRegisteredProcessingOrders(ctx, limit)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

@@ -34,7 +34,7 @@ func StringToAccrualStatusType(s string) (AccrualStatusType, bool) {
 }
 
 type AccrualResponseDTO struct {
+	Accrual *float64          `json:"accrual,omitempty"`
 	Order   string            `json:"order"`
 	Status  AccrualStatusType `json:"status"`
-	Accrual *float64          `json:"accrual,omitempty"`
 }

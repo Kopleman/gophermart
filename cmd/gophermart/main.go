@@ -21,7 +21,7 @@ func main() {
 	)
 	defer logger.Sync() //nolint:all // its safe
 
-	srv := run(logger, ctx, cancel)
+	srv := run(ctx, logger, cancel)
 
 	// Wait system signals or context done
 	for {
@@ -33,10 +33,9 @@ func main() {
 			return
 		}
 	}
-
 }
 
-func run(logger log.Logger, ctx context.Context, cancel context.CancelFunc) *server.Server {
+func run(ctx context.Context, logger log.Logger, cancel context.CancelFunc) *server.Server {
 	srvConfig, err := config.GetServerConfig()
 	if err != nil {
 		logger.Fatalf("failed to parse config for server: %w", err)

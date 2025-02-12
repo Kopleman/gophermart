@@ -12,21 +12,22 @@ import (
 )
 
 func main() {
-	ctx, cancel := context.WithCancel(context.Background())
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
 	logger := log.New(
 		log.WithAppVersion("local"),
 		log.WithLogLevel(log.INFO),
 	)
 	defer logger.Sync() //nolint:all // its safe
 
-	srv := run(ctx, logger, cancel)
+	onErrChan := make(chan struct{})
+	defer close(onErrChan)
+	srv := run(ctx, logger, onErrChan)
 
-	// Wait system signals or context done
+	// Wait system context done or onError
 	for {
 		select {
-		case <-sig:
+		case <-onErrChan:
 			cancel()
 		case <-ctx.Done():
 			srv.Shutdown()
@@ -35,7 +36,7 @@ func main() {
 	}
 }
 
-func run(ctx context.Context, logger log.Logger, cancel context.CancelFunc) *server.Server {
+func run(ctx context.Context, logger log.Logger, onErrorChan chan<- struct{}) *server.Server {
 	srvConfig, err := config.GetServerConfig()
 	if err != nil {
 		logger.Fatalf("failed to parse config for server: %w", err)
@@ -50,12 +51,12 @@ func run(ctx context.Context, logger log.Logger, cancel context.CancelFunc) *ser
 
 		if serverStartError := srv.Start(ctx, runTimeError); serverStartError != nil {
 			logger.Fatalf("server startup error: %v", serverStartError)
-			cancel()
+			onErrorChan <- struct{}{}
 		}
 		serverRunTimeError := <-runTimeError
 		if serverRunTimeError != nil {
 			logger.Fatalf("server runtime error: %v", serverRunTimeError)
-			cancel()
+			onErrorChan <- struct{}{}
 		}
 	}(ctx)
 

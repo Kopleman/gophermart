@@ -195,10 +195,17 @@ func (a *Accrual) startRegisterOrdersToProcessWorker(
 	ctx context.Context,
 	ordersChan <-chan *pgxstore.OrdersToProcess,
 	errorChan chan<- error,
+	workerId int,
 ) {
-	for order := range ordersChan {
-		if err := a.registerOrder(ctx, order); err != nil {
-			errorChan <- fmt.Errorf("failed to register order: %w", err)
+	for {
+		select {
+		case order := <-ordersChan:
+			if err := a.registerOrder(ctx, order); err != nil {
+				errorChan <- fmt.Errorf("failed to register order: %w", err)
+			}
+		case <-ctx.Done():
+			a.logger.Infof("stopping registering orders for %v", workerId)
+			return
 		}
 	}
 }
@@ -208,10 +215,17 @@ func (a *Accrual) startProcessingOrdersToProcessWorker(
 	ctx context.Context,
 	ordersChan <-chan *pgxstore.OrdersToProcess,
 	errorChan chan<- error,
+	workerID int,
 ) {
-	for order := range ordersChan {
-		if err := a.processOrder(ctx, order); err != nil {
-			errorChan <- fmt.Errorf("failed to register order: %w", err)
+	for {
+		select {
+		case order := <-ordersChan:
+			if err := a.processOrder(ctx, order); err != nil {
+				errorChan <- fmt.Errorf("failed to register order: %w", err)
+			}
+		case <-ctx.Done():
+			a.logger.Infof("stopping registering orders to process worker %v", workerID)
+			return
 		}
 	}
 }
@@ -242,7 +256,7 @@ func (a *Accrual) Run(ctx context.Context) error {
 	spew.Dump(a.cfg)
 
 	for w := 1; w <= maxWorkerCount; w++ {
-		go a.startRegisterOrdersToProcessWorker(innerCtx, ordersToRegisterChan, errChan)
+		go a.startRegisterOrdersToProcessWorker(innerCtx, ordersToRegisterChan, errChan, w)
 	}
 
 	ordersToProcessParams := processJobParams{
@@ -257,7 +271,7 @@ func (a *Accrual) Run(ctx context.Context) error {
 	ordersToProcessChan := a.genOrdersToProcessChan(innerCtx, &ordersToProcessParams)
 
 	for w := 1; w <= maxWorkerCount; w++ {
-		go a.startProcessingOrdersToProcessWorker(innerCtx, ordersToProcessChan, errChan)
+		go a.startProcessingOrdersToProcessWorker(innerCtx, ordersToProcessChan, errChan, w)
 	}
 
 	for {

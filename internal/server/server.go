@@ -87,6 +87,16 @@ func (s *Server) Start(ctx context.Context, runTimeError chan<- error) error {
 			runTimeError <- fmt.Errorf("internal server error: %w", listenAndServeErr)
 		}
 	}()
+	go func() {
+		<-ctx.Done()
+		s.logger.Info("shutting down server http server")
+		if s.app == nil {
+			return
+		}
+		if err := s.app.Shutdown(); err != nil {
+			s.logger.Fatalf("failed to shutdown app: %w", err)
+		}
+	}()
 
 	go func() {
 		if accrualErr := s.accrual.Run(ctx); accrualErr != nil {

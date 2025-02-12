@@ -6,26 +6,51 @@ import (
 	"io"
 	"math"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/Kopleman/gophermart/internal/common/log"
 )
 
 const baseBackoffMultiplier = 2
+const baseBackoffMaxWait = 60
 
-func backoff(retries int) time.Duration {
+func (t *retryableTransport) backoff(resp *http.Response, retries int) time.Duration {
+	if resp != nil {
+		if resp.StatusCode == http.StatusTooManyRequests && t.handle429Status {
+			retryAfter := resp.Header.Get("Retry-After")
+			retryAfterSeconds, err := strconv.Atoi(retryAfter)
+			if err != nil {
+				retryAfterSeconds = baseBackoffMaxWait
+			}
+			return time.Duration(retryAfterSeconds) * time.Second
+		}
+	}
 	return time.Duration(math.Pow(baseBackoffMultiplier, float64(retries))) * time.Second
 }
 
-func shouldRetry(err error, resp *http.Response) bool {
+func (t *retryableTransport) shouldRetry(err error, resp *http.Response, retries int) bool {
 	if err != nil {
-		return true
+		return t.retryCountExceed(retries)
+	}
+
+	if resp == nil {
+		return false
 	}
 
 	if resp.StatusCode >= http.StatusInternalServerError {
-		return true
+		return t.retryCountExceed(retries)
 	}
+
+	if resp.StatusCode == http.StatusTooManyRequests {
+		return t.handle429Status
+	}
+
 	return false
+}
+
+func (t *retryableTransport) retryCountExceed(retries int) bool {
+	return t.retryCount > retries
 }
 
 func closeBody(resp *http.Response) error {
@@ -52,8 +77,8 @@ func (t *retryableTransport) RoundTrip(req *http.Request) (*http.Response, error
 		return resp, nil
 	}
 	retries := 0
-	for shouldRetry(err, resp) && retries < t.retryCount {
-		time.Sleep(backoff(retries))
+	for t.shouldRetry(err, resp, retries) {
+		time.Sleep(t.backoff(resp, retries))
 		t.logger.Infof("retry attempt %d", retries+1)
 		if err = closeBody(resp); err != nil {
 			return nil, fmt.Errorf("round trip: %w", err)
@@ -71,16 +96,18 @@ func (t *retryableTransport) RoundTrip(req *http.Request) (*http.Response, error
 }
 
 type retryableTransport struct {
-	transport  http.RoundTripper
-	logger     log.Logger
-	retryCount int
+	transport       http.RoundTripper
+	logger          log.Logger
+	retryCount      int
+	handle429Status bool
 }
 
-func NewRetryableTransport(logger log.Logger, retryCount int) http.RoundTripper {
+func NewRetryableTransport(logger log.Logger, retryCount int, handle429Status bool) http.RoundTripper {
 	transport := &retryableTransport{
-		transport:  &http.Transport{},
-		retryCount: retryCount,
-		logger:     logger,
+		transport:       &http.Transport{},
+		retryCount:      retryCount,
+		logger:          logger,
+		handle429Status: handle429Status,
 	}
 
 	return transport

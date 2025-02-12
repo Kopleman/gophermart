@@ -12,6 +12,7 @@ import (
 )
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
 	logger := log.New(
@@ -20,14 +21,21 @@ func main() {
 	)
 	defer logger.Sync() //nolint:all // its safe
 
-	go run(logger)
+	srv := run(ctx, logger, cancel)
 
-	// Wait system signals
-	<-sig
+	// Wait system signals or context done
+	for {
+		select {
+		case <-sig:
+			cancel()
+		case <-ctx.Done():
+			srv.Shutdown()
+			return
+		}
+	}
 }
 
-func run(logger log.Logger) {
-	ctx, cancel := context.WithCancel(context.Background())
+func run(ctx context.Context, logger log.Logger, cancel context.CancelFunc) *server.Server {
 	srvConfig, err := config.GetServerConfig()
 	if err != nil {
 		logger.Fatalf("failed to parse config for server: %w", err)
@@ -37,9 +45,19 @@ func run(logger log.Logger) {
 
 	// Start server
 	go func(ctx context.Context) {
-		if serverStartError := srv.Start(ctx); serverStartError != nil {
-			logger.Fatalf("server error: %v", serverStartError)
+		runTimeError := make(chan error, 1)
+		defer close(runTimeError)
+
+		if serverStartError := srv.Start(ctx, runTimeError); serverStartError != nil {
+			logger.Fatalf("server startup error: %v", serverStartError)
+			cancel()
 		}
-		cancel()
+		serverRunTimeError := <-runTimeError
+		if serverRunTimeError != nil {
+			logger.Fatalf("server runtime error: %v", serverRunTimeError)
+			cancel()
+		}
 	}(ctx)
+
+	return srv
 }

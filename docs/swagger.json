@@ -285,7 +285,7 @@
             }
         },
         "/api/user/withdrawals": {
-            "post": {
+            "get": {
                 "description": "Fetch list of all user's withdrawals",
                 "consumes": [
                     "text/plain"
@@ -360,7 +360,7 @@
                     "type": "number",
                     "example": 500
                 },
-                "order_number": {
+                "number": {
                     "type": "string",
                     "example": "49927398716"
                 },

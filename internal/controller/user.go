@@ -134,7 +134,7 @@ func (c *UserController) LoginUser() fiber.Handler {
 //	@Failure		204				"No content"
 //	@Failure		401				"Unauthorized"
 //	@Failure		500				"Internal Server Error"
-//	@Router			/api/user/withdrawals [post]
+//	@Router			/api/user/withdrawals [get]
 func (c *UserController) GetWithdrawals() fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		userID, err := middlerware.GetUserID(ctx)

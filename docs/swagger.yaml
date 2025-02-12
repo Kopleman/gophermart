@@ -19,7 +19,7 @@ definitions:
       accrual:
         example: 500
         type: number
-      order_number:
+      number:
         example: "49927398716"
         type: string
       status:
@@ -258,7 +258,7 @@ paths:
       tags:
       - auth
   /api/user/withdrawals:
-    post:
+    get:
       consumes:
       - text/plain
       description: Fetch list of all user's withdrawals

@@ -60,3 +60,61 @@ func (r *OrderRepo) GetUserOrders(ctx context.Context, userID uuid.UUID) ([]*pgx
 
 	return orders, nil
 }
+
+func (r *OrderRepo) PickOrdersToProcess(ctx context.Context, limit int32) ([]*pgxstore.OrdersToProcess, error) {
+	orders, err := r.store.PickOrdersToProcess(ctx, limit)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("pick orders to process: %w", err)
+	}
+
+	return orders, nil
+}
+
+func (r *OrderRepo) GetRegisteredProcessingOrders(
+	ctx context.Context,
+	limit int32,
+) ([]*pgxstore.OrdersToProcess, error) {
+	orders, err := r.store.GetRegisteredProcessingOrders(ctx, limit)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("pick orders to process: %w", err)
+	}
+
+	return orders, nil
+}
+
+func (r *OrderRepo) GetStartProcessingOrders(ctx context.Context) ([]*pgxstore.OrdersToProcess, error) {
+	orders, err := r.store.GetStartProcessingOrders(ctx)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("get processing orders: %w", err)
+	}
+
+	return orders, nil
+}
+
+func (r *OrderRepo) RegisterOrderProcessing(ctx context.Context, orderNumber string) error {
+	if err := r.store.RegisterOrderProcessing(ctx, orderNumber); err != nil {
+		return fmt.Errorf("register order processing: %w", err)
+	}
+
+	return nil
+}
+
+func (r *OrderRepo) StoreAccrualCalculation(
+	ctx context.Context,
+	params pgxstore.AccrualCalculationParams,
+) error {
+	if err := r.store.StoreAccrualCalculation(ctx, params); err != nil {
+		return fmt.Errorf("store accrual calculation: %w", err)
+	}
+
+	return nil
+}

@@ -80,9 +80,10 @@ func AllOrderStatusTypeValues() []OrderStatusType {
 type ProcessStatusType string
 
 const (
-	ProcessStatusTypeNEW        ProcessStatusType = "NEW"
-	ProcessStatusTypePROCESSING ProcessStatusType = "PROCESSING"
-	ProcessStatusTypePROCESSED  ProcessStatusType = "PROCESSED"
+	ProcessStatusTypeNEW             ProcessStatusType = "NEW"
+	ProcessStatusTypeSTARTPROCESSING ProcessStatusType = "START_PROCESSING"
+	ProcessStatusTypeREGISTERED      ProcessStatusType = "REGISTERED"
+	ProcessStatusTypePROCESSED       ProcessStatusType = "PROCESSED"
 )
 
 func (e *ProcessStatusType) Scan(src interface{}) error {
@@ -123,7 +124,8 @@ func (ns NullProcessStatusType) Value() (driver.Value, error) {
 func (e ProcessStatusType) Valid() bool {
 	switch e {
 	case ProcessStatusTypeNEW,
-		ProcessStatusTypePROCESSING,
+		ProcessStatusTypeSTARTPROCESSING,
+		ProcessStatusTypeREGISTERED,
 		ProcessStatusTypePROCESSED:
 		return true
 	}
@@ -133,7 +135,8 @@ func (e ProcessStatusType) Valid() bool {
 func AllProcessStatusTypeValues() []ProcessStatusType {
 	return []ProcessStatusType{
 		ProcessStatusTypeNEW,
-		ProcessStatusTypePROCESSING,
+		ProcessStatusTypeSTARTPROCESSING,
+		ProcessStatusTypeREGISTERED,
 		ProcessStatusTypePROCESSED,
 	}
 }

@@ -1,0 +1,290 @@
+definitions:
+  controller.LoginResponseDto:
+    properties:
+      token:
+        example: some_token
+        type: string
+    type: object
+  dto.BalanceDTO:
+    properties:
+      current:
+        example: 500.5
+        type: number
+      withdrawn:
+        example: 42
+        type: number
+    type: object
+  dto.OrderInfoDTO:
+    properties:
+      accrual:
+        example: 500
+        type: number
+      number:
+        example: "49927398716"
+        type: string
+      status:
+        example: NEW
+        type: string
+      uploaded_at:
+        example: "2020-12-10T15:12:01+03:00"
+        type: string
+    type: object
+  dto.UserCredentialsDTO:
+    properties:
+      login:
+        example: login
+        type: string
+      password:
+        example: password
+        type: string
+    required:
+    - login
+    - password
+    type: object
+  dto.WithdrawRequestDTO:
+    properties:
+      order:
+        example: "49927398716"
+        type: string
+      sum:
+        example: 100.2
+        type: number
+    required:
+    - order
+    - sum
+    type: object
+  dto.WithdrawalItemDTO:
+    properties:
+      order:
+        example: "49927398716"
+        type: string
+      processed_at:
+        example: "2020-12-10T15:12:01+03:00"
+        type: string
+      sum:
+        example: 100.2
+        type: number
+    required:
+    - order
+    - sum
+    type: object
+info:
+  contact: {}
+paths:
+  /api/user/balance:
+    get:
+      consumes:
+      - text/plain
+      description: Fetch user's balance
+      parameters:
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BalanceDTO'
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+      summary: Fetch user's balance
+      tags:
+      - user
+  /api/user/balance/withdraw:
+    post:
+      consumes:
+      - application/json
+      description: Make withdraw from users balance
+      parameters:
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Body params
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/dto.WithdrawRequestDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+        "402":
+          description: Payment Required
+        "422":
+          description: Unprocessable Entity
+        "500":
+          description: Internal Server Error
+      summary: Make withdraw from users balance
+      tags:
+      - user
+  /api/user/login:
+    post:
+      consumes:
+      - application/json
+      description: Performs user login, returns jwt token
+      parameters:
+      - description: Body params
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UserCredentialsDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.LoginResponseDto'
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+      summary: Performs user login
+      tags:
+      - auth
+  /api/user/orders:
+    get:
+      consumes:
+      - text/plain
+      description: Fetch list of users orders
+      parameters:
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.OrderInfoDTO'
+            type: array
+        "204":
+          description: Accepted
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+      summary: Fetch list of users orders
+      tags:
+      - order
+    post:
+      consumes:
+      - text/plain
+      description: Add new user order to system
+      parameters:
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Order number
+        example: "49927398716"
+        in: body
+        name: data
+        required: true
+        schema:
+          type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+        "202":
+          description: Accepted
+        "400":
+          description: Bad request
+        "401":
+          description: Unauthorized
+        "409":
+          description: Conflict
+        "422":
+          description: Unprocessable Entity
+        "500":
+          description: Internal Server Error
+      summary: Add new order
+      tags:
+      - order
+  /api/user/register:
+    post:
+      consumes:
+      - application/json
+      description: Register new user
+      parameters:
+      - description: Body params
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UserCredentialsDTO'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.LoginResponseDto'
+        "400":
+          description: Bad request
+        "409":
+          description: Conflict
+        "500":
+          description: Internal Server Error
+      summary: Register new user
+      tags:
+      - auth
+  /api/user/withdrawals:
+    get:
+      consumes:
+      - text/plain
+      description: Fetch list of all user's withdrawals
+      parameters:
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.WithdrawalItemDTO'
+            type: array
+        "204":
+          description: No content
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+      summary: Fetch user's withdrawals
+      tags:
+      - user
+swagger: "2.0"

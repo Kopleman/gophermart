@@ -1,4 +1,36 @@
-GOLANGCI_LINT_CACHE?=/tmp/gophermart
+-include .env
+
+MIGRATIONS_DIR   = ./sql/migrations/
+GOLANGCI_LINT_CACHE?=/tmp/${APP_NAME}
+
+.PHONY: build
+build:
+	go build -o ./cmd/gophermart/gophermart ./cmd/gophermart
+
+.PHONY: run
+run:
+	go run ./cmd/gophermart/main.go
+
+.PHONY: migrate
+migrate:
+	migrate -path "$(MIGRATIONS_DIR)" -database "$(DATABASE_URI)" $(filter-out $@,$(MAKECMDGOALS))
+
+.PHONY: db-create-migration
+db-create-migration:
+	migrate create -ext sql -dir "$(MIGRATIONS_DIR)" $(filter-out $@,$(MAKECMDGOALS))
+
+.PHONY: gensql
+gensql:
+	sqlc generate
+
+genswagger:
+	swag fmt -d ./cmd/gophermart
+	swag fmt -d ./internal/controller
+	swag init -o ./docs --dir ./internal/controller -g ../../cmd/gophermart/main.go --parseDependency
+
+.PHONY: fix-field-alignment
+fix-field-alignment:
+	fieldalignment -fix ./...
 
 .PHONY: golangci-lint-run
 golangci-lint-run: _golangci-lint-rm-unformatted-report
@@ -13,7 +45,7 @@ _golangci-lint-run: _golangci-lint-reports-mkdir
     -v $(shell pwd):/app \
     -v $(GOLANGCI_LINT_CACHE):/root/.cache \
     -w /app \
-    golangci/golangci-lint:v1.57.2 \
+    golangci/golangci-lint:v1.63.1 \
         golangci-lint run \
             -c .golangci.yml \
 	> ./golangci-lint/report-unformatted.json

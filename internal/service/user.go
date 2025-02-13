@@ -49,7 +49,7 @@ func (s *UserService) CreateUser(ctx context.Context, createReqDto *dto.UserCred
 
 	hashedPassword, hashError := s.hashPassword(createReqDto.Password)
 	if hashError != nil {
-		return fmt.Errorf("userService.createUser.hashPassword.: %w", err)
+		return fmt.Errorf("userService.createUser.hashPassword: %w", err)
 	}
 
 	createDto := &dto.CreateUserDTO{

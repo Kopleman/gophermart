@@ -10,6 +10,6 @@ CREATE TABLE transactions
     change       DECIMAL(32, 18)                               NOT NULL,
     new_balance  DECIMAL(32, 18)                               NOT NULL,
     type         TRANSACTION_TYPE                              NOT NULL,
-    created_at   TIMESTAMP DEFAULT NOW(),
+    created_at   TIMESTAMP DEFAULT NOW() NOT NULL,
     CONSTRAINT transactions_order_number_uniq UNIQUE NULLS DISTINCT(order_number)
 )

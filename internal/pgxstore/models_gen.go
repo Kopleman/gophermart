@@ -222,8 +222,8 @@ type OrdersToProcess struct {
 }
 
 type Transaction struct {
+	CreatedAt   time.Time       `db:"created_at" json:"created_at"`
 	OrderNumber *string         `db:"order_number" json:"order_number"`
-	CreatedAt   *time.Time      `db:"created_at" json:"created_at"`
 	OldBalance  decimal.Decimal `db:"old_balance" json:"old_balance"`
 	Change      decimal.Decimal `db:"change" json:"change"`
 	NewBalance  decimal.Decimal `db:"new_balance" json:"new_balance"`

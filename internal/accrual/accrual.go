@@ -195,7 +195,7 @@ func (a *Accrual) startRegisterOrdersToProcessWorker(
 	ctx context.Context,
 	ordersChan <-chan *pgxstore.OrdersToProcess,
 	errorChan chan<- error,
-	workerId int,
+	workerID int,
 ) {
 	for {
 		select {
@@ -204,7 +204,7 @@ func (a *Accrual) startRegisterOrdersToProcessWorker(
 				errorChan <- fmt.Errorf("failed to register order: %w", err)
 			}
 		case <-ctx.Done():
-			a.logger.Infof("stopping registering orders for %v", workerId)
+			a.logger.Infof("stopping registering orders for %v", workerID)
 			return
 		}
 	}

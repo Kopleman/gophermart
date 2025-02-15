@@ -1,6 +1,8 @@
 module github.com/Kopleman/gophermart
 
-go 1.23.3
+go 1.22.0
+
+toolchain go1.23.3
 
 require (
 	github.com/caarlos0/env/v6 v6.10.1

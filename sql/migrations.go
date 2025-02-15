@@ -1,7 +1,8 @@
-package postgres
+package sql
 
 import (
 	"database/sql"
+	"embed"
 	"errors"
 	"fmt"
 
@@ -9,9 +10,18 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/pgx"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
 )
 
+//go:embed migrations/*.sql
+var embeddedMigrations embed.FS
+
 func RunMigrations(dsn string) error {
+	iofsDriver, err := iofs.New(embeddedMigrations, "migrations")
+	if err != nil {
+		return fmt.Errorf("embedded migrations fs driver error: %w", err)
+	}
+
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		return fmt.Errorf("database connection: %w", err)
@@ -20,9 +30,7 @@ func RunMigrations(dsn string) error {
 	if err != nil {
 		return fmt.Errorf("database driver: %w", err)
 	}
-	m, err := migrate.NewWithDatabaseInstance(
-		"file://sql/migrations",
-		"postgres", driver)
+	m, err := migrate.NewWithInstance("iofs", iofsDriver, "postgres", driver)
 	if err != nil {
 		return fmt.Errorf("on creating migration instance: %w", err)
 	}

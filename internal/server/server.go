@@ -14,6 +14,7 @@ import (
 	"github.com/Kopleman/gophermart/internal/postgres"
 	"github.com/Kopleman/gophermart/internal/repo"
 	"github.com/Kopleman/gophermart/internal/service"
+	"github.com/Kopleman/gophermart/sql"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	fiberLogger "github.com/gofiber/fiber/v2/middleware/logger"
@@ -39,7 +40,7 @@ func NewServer(logger log.Logger, cfg *config.Config) *Server {
 }
 
 func (s *Server) prepareStore(ctx context.Context) error {
-	if err := postgres.RunMigrations(s.config.DataBaseURI); err != nil {
+	if err := sql.RunMigrations(s.config.DataBaseURI); err != nil {
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}
 

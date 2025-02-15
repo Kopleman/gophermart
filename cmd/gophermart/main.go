@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -16,18 +17,21 @@ func main() {
 	defer cancel()
 	logger := log.New(
 		log.WithAppVersion("local"),
-		log.WithLogLevel(log.INFO),
+		log.WithLogLevel(log.Info),
 	)
 	defer logger.Sync() //nolint:all // its safe
 
-	onErrChan := make(chan struct{})
+	onErrChan := make(chan error)
 	defer close(onErrChan)
 	srv := run(ctx, logger, onErrChan)
 
 	// Wait system context done or onError
 	for {
 		select {
-		case <-onErrChan:
+		case err := <-onErrChan:
+			if err != nil {
+				logger.Fatal(err)
+			}
 			cancel()
 		case <-ctx.Done():
 			srv.Shutdown()
@@ -36,7 +40,7 @@ func main() {
 	}
 }
 
-func run(ctx context.Context, logger log.Logger, onErrorChan chan<- struct{}) *server.Server {
+func run(ctx context.Context, logger log.Logger, onErrorChan chan<- error) *server.Server {
 	srvConfig, err := config.GetServerConfig()
 	if err != nil {
 		logger.Fatalf("failed to parse config for server: %w", err)
@@ -50,13 +54,11 @@ func run(ctx context.Context, logger log.Logger, onErrorChan chan<- struct{}) *s
 		defer close(runTimeError)
 
 		if serverStartError := srv.Start(ctx, runTimeError); serverStartError != nil {
-			logger.Fatalf("server startup error: %v", serverStartError)
-			onErrorChan <- struct{}{}
+			onErrorChan <- fmt.Errorf("failed to start server: %w", serverStartError)
 		}
 		serverRunTimeError := <-runTimeError
 		if serverRunTimeError != nil {
-			logger.Fatalf("server runtime error: %v", serverRunTimeError)
-			onErrorChan <- struct{}{}
+			onErrorChan <- fmt.Errorf("runtime error: %w", serverRunTimeError)
 		}
 	}(ctx)
 

@@ -14,18 +14,18 @@ func (l LogLevel) String() string {
 }
 
 const (
-	DEBUG   LogLevel = "debug"
-	INFO    LogLevel = "info"
-	WARNING LogLevel = "warning"
-	ERROR   LogLevel = "error"
-	FATAL   LogLevel = "fatal"
-	PANIC   LogLevel = "panic"
+	Debug   LogLevel = "debug"
+	Info    LogLevel = "info"
+	Warning LogLevel = "warning"
+	Error   LogLevel = "error"
+	Fatal   LogLevel = "fatal"
+	Panic   LogLevel = "panic"
 )
 
 // GetAllLevels return all log levels. Used in validation.
 func GetAllLevels() []interface{} {
 	return []interface{}{
-		DEBUG.String(), INFO.String(), WARNING.String(), ERROR.String(), FATAL.String(), PANIC.String(),
+		Debug.String(), Info.String(), Warning.String(), Error.String(), Fatal.String(), Panic.String(),
 	}
 }
 
@@ -91,17 +91,17 @@ func initLogger(level LogLevel, consoleColored bool, timeKey string) *zap.Logger
 	)
 
 	switch level {
-	case DEBUG:
+	case Debug:
 		atom.SetLevel(zap.DebugLevel)
-	case INFO:
+	case Info:
 		atom.SetLevel(zap.InfoLevel)
-	case WARNING:
+	case Warning:
 		atom.SetLevel(zap.WarnLevel)
-	case ERROR:
+	case Error:
 		atom.SetLevel(zap.ErrorLevel)
-	case FATAL:
+	case Fatal:
 		atom.SetLevel(zap.FatalLevel)
-	case PANIC:
+	case Panic:
 		atom.SetLevel(zap.PanicLevel)
 	default:
 		atom.SetLevel(zap.InfoLevel)
@@ -118,7 +118,7 @@ func New(opts ...Option) Logger {
 	}
 
 	if options.LogLevel == "" {
-		options.LogLevel = DEBUG
+		options.LogLevel = Debug
 	}
 
 	l := initLogger(

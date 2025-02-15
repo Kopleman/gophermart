@@ -10,15 +10,10 @@ import (
 	"github.com/Kopleman/gophermart/internal/common/log"
 	"github.com/Kopleman/gophermart/internal/config"
 	"github.com/Kopleman/gophermart/internal/pgxstore"
-	"github.com/davecgh/go-spew/spew"
-	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 )
 
-type OrderRepo interface {
-	GetOrderByNumber(ctx context.Context, orderNumber string) (*pgxstore.Order, error)
-	CreateOrder(ctx context.Context, createDTO *dto.CreateOrderDTO) (*pgxstore.Order, *pgxstore.OrdersToProcess, error)
-	GetUserOrders(ctx context.Context, userID uuid.UUID) ([]*pgxstore.Order, error)
+type OrderRepoForAccrual interface {
 	PickOrdersToProcess(ctx context.Context, limit int32) ([]*pgxstore.OrdersToProcess, error)
 	GetRegisteredProcessingOrders(ctx context.Context, limit int32) ([]*pgxstore.OrdersToProcess, error)
 	GetStartProcessingOrders(ctx context.Context) ([]*pgxstore.OrdersToProcess, error)
@@ -36,11 +31,11 @@ type HTTPClient interface {
 type Accrual struct {
 	logger     log.Logger
 	cfg        *config.Config
-	repo       OrderRepo
+	repo       OrderRepoForAccrual
 	httpClient HTTPClient
 }
 
-func New(logger log.Logger, cfg *config.Config, repo OrderRepo, client HTTPClient) *Accrual {
+func New(logger log.Logger, cfg *config.Config, repo OrderRepoForAccrual, client HTTPClient) *Accrual {
 	return &Accrual{
 		logger:     logger,
 		cfg:        cfg,
@@ -253,7 +248,6 @@ func (a *Accrual) Run(ctx context.Context) error {
 	ordersToRegisterChan := a.genOrdersToProcessChan(innerCtx, &ordersToRegisterParams)
 
 	maxWorkerCount := int(a.cfg.WorkerLimit)
-	spew.Dump(a.cfg)
 
 	for w := 1; w <= maxWorkerCount; w++ {
 		go a.startRegisterOrdersToProcessWorker(innerCtx, ordersToRegisterChan, errChan, w)

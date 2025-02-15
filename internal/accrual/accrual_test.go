@@ -4,17 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	//"fmt"
 	"testing"
-	//"time"
 
 	"github.com/Kopleman/gophermart/internal/accrual/mocks"
 	"github.com/Kopleman/gophermart/internal/common/dto"
 	"github.com/Kopleman/gophermart/internal/common/log"
 	"github.com/Kopleman/gophermart/internal/config"
 	"github.com/Kopleman/gophermart/internal/pgxstore"
-	//"github.com/Kopleman/gophermart/internal/pgxstore"
-	//"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -25,7 +21,7 @@ type mockHTTPClient struct {
 
 func (m *mockHTTPClient) Get(url, contentType string) ([]byte, error) {
 	args := m.Called(url, contentType)
-	return args.Get(0).([]byte), args.Error(1)
+	return args.Get(0).([]byte), args.Error(1) //nolint:all // its safe
 }
 
 func TestAccrual_sendRequestToAccrual(t *testing.T) {

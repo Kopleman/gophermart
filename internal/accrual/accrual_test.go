@@ -1,9 +1,11 @@
+//nolint:dupl // test-cases dupes
 package accrual
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
+	"sync"
 	"testing"
 
 	"github.com/Kopleman/gophermart/internal/accrual/mocks"
@@ -202,8 +204,10 @@ func TestAccrual_workerFunctions(t *testing.T) {
 		client.On("Get", mock.Anything, mock.Anything).Return([]byte{}, nil)
 		repo.On("RegisterOrderProcessing", ctx, order.OrderNumber).Return(nil)
 
+		wg := &sync.WaitGroup{}
 		a := New(log.MockLogger{}, &config.Config{}, repo, client)
-		go a.startRegisterOrdersToProcessWorker(ctx, ordersChan, make(chan error), 1)
+		wg.Add(1)
+		go a.startRegisterOrdersToProcessWorker(ctx, wg, ordersChan, make(chan error), 1)
 	})
 
 	t.Run("processing worker", func(t *testing.T) {
@@ -212,7 +216,9 @@ func TestAccrual_workerFunctions(t *testing.T) {
 		client.On("Get", mock.Anything, mock.Anything).Return([]byte{}, nil)
 		repo.On("StoreAccrualCalculation", ctx, mock.Anything).Return(nil)
 
+		wg := &sync.WaitGroup{}
 		a := New(log.MockLogger{}, &config.Config{}, repo, client)
-		go a.startProcessingOrdersToProcessWorker(ctx, ordersChan, make(chan error), 1)
+		wg.Add(1)
+		go a.startProcessingOrdersToProcessWorker(ctx, wg, ordersChan, make(chan error), 1)
 	})
 }

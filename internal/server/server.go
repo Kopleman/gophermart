@@ -90,12 +90,11 @@ func (s *Server) Start(ctx context.Context, runTimeError chan<- error) error {
 	}()
 	go func() {
 		<-ctx.Done()
-		s.logger.Info("shutting down server http server")
 		if s.app == nil {
 			return
 		}
 		if err := s.app.Shutdown(); err != nil {
-			s.logger.Fatalf("failed to shutdown app: %w", err)
+			s.logger.Errorf("failed to shutdown app: %w", err)
 		}
 	}()
 

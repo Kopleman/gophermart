@@ -10,6 +10,7 @@ import (
 	"github.com/Kopleman/gophermart/internal/common/log"
 	"github.com/Kopleman/gophermart/internal/config"
 	"github.com/Kopleman/gophermart/internal/server"
+	"golang.org/x/sync/errgroup"
 )
 
 func main() {
@@ -25,18 +26,28 @@ func main() {
 	defer close(onErrChan)
 	srv := run(ctx, logger, onErrChan)
 
-	// Wait system context done or onError
-	for {
-		select {
-		case err := <-onErrChan:
-			if err != nil {
-				logger.Fatal(err)
+	g, gCtx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		// Wait system context done or onError
+		for {
+			select {
+			case err := <-onErrChan:
+				if err != nil {
+					return err
+				}
+			case <-ctx.Done():
+				return nil
 			}
-			cancel()
-		case <-ctx.Done():
-			srv.Shutdown()
-			return
 		}
+	})
+	g.Go(func() error {
+		<-gCtx.Done()
+		srv.Shutdown()
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
+		logger.Errorf("server shut down unexpectedly due to: %w", err)
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/Kopleman/gophermart/internal/common/dto"
@@ -188,10 +189,12 @@ func (a *Accrual) processOrder(ctx context.Context, order *pgxstore.OrdersToProc
 // It not handle calculation itself.
 func (a *Accrual) startRegisterOrdersToProcessWorker(
 	ctx context.Context,
+	wg *sync.WaitGroup,
 	ordersChan <-chan *pgxstore.OrdersToProcess,
 	errorChan chan<- error,
 	workerID int,
 ) {
+	defer wg.Done()
 	for {
 		select {
 		case order := <-ordersChan:
@@ -208,10 +211,12 @@ func (a *Accrual) startRegisterOrdersToProcessWorker(
 // This worker fetch data from accrual to store deposit.
 func (a *Accrual) startProcessingOrdersToProcessWorker(
 	ctx context.Context,
+	wg *sync.WaitGroup,
 	ordersChan <-chan *pgxstore.OrdersToProcess,
 	errorChan chan<- error,
 	workerID int,
 ) {
+	defer wg.Done()
 	for {
 		select {
 		case order := <-ordersChan:
@@ -233,7 +238,7 @@ func (a *Accrual) Run(ctx context.Context) error {
 
 	pollDuration := time.Duration(a.cfg.PollInterval) * time.Second
 
-	errChan := make(chan error)
+	errChan := make(chan error, a.cfg.WorkerLimit*2) //nolint:all // we just double chan buffer that every worker has chance to push error
 	defer close(errChan)
 
 	ordersToRegisterParams := processJobParams{
@@ -249,8 +254,11 @@ func (a *Accrual) Run(ctx context.Context) error {
 
 	maxWorkerCount := int(a.cfg.WorkerLimit)
 
+	wg := &sync.WaitGroup{}
+
 	for w := 1; w <= maxWorkerCount; w++ {
-		go a.startRegisterOrdersToProcessWorker(innerCtx, ordersToRegisterChan, errChan, w)
+		wg.Add(1)
+		go a.startRegisterOrdersToProcessWorker(innerCtx, wg, ordersToRegisterChan, errChan, w)
 	}
 
 	ordersToProcessParams := processJobParams{
@@ -265,20 +273,22 @@ func (a *Accrual) Run(ctx context.Context) error {
 	ordersToProcessChan := a.genOrdersToProcessChan(innerCtx, &ordersToProcessParams)
 
 	for w := 1; w <= maxWorkerCount; w++ {
-		go a.startProcessingOrdersToProcessWorker(innerCtx, ordersToProcessChan, errChan, w)
+		wg.Add(1)
+		go a.startProcessingOrdersToProcessWorker(innerCtx, wg, ordersToProcessChan, errChan, w)
 	}
 
 	for {
 		select {
 		case err := <-errChan:
 			if err != nil {
-				a.logger.Error(err)
 				cancelFunc()
+				wg.Wait()
 				return fmt.Errorf("accrual order processing failed: %w", err)
 			}
 		case <-ctx.Done():
-			cancelFunc()
 			a.logger.Infof("gracefully shutting down accrual service")
+			cancelFunc()
+			wg.Wait()
 			return nil
 		}
 	}

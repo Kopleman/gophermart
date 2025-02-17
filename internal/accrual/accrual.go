@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -13,6 +15,8 @@ import (
 	"github.com/Kopleman/gophermart/internal/pgxstore"
 	"github.com/shopspring/decimal"
 )
+
+const baseBackoffMaxWait = 60
 
 type OrderRepoForAccrual interface {
 	PickOrdersToProcess(ctx context.Context, limit int32) ([]*pgxstore.OrdersToProcess, error)
@@ -26,22 +30,26 @@ type OrderRepoForAccrual interface {
 }
 
 type HTTPClient interface {
-	Get(url, contentType string) ([]byte, error)
+	Get(url, contentType string) ([]byte, *http.Response, error)
 }
 
 type Accrual struct {
-	logger     log.Logger
-	cfg        *config.Config
-	repo       OrderRepoForAccrual
-	httpClient HTTPClient
+	logger        log.Logger
+	cfg           *config.Config
+	repo          OrderRepoForAccrual
+	httpClient    HTTPClient
+	mu            *sync.Mutex
+	nextRetryTime time.Time
 }
 
 func New(logger log.Logger, cfg *config.Config, repo OrderRepoForAccrual, client HTTPClient) *Accrual {
 	return &Accrual{
-		logger:     logger,
-		cfg:        cfg,
-		repo:       repo,
-		httpClient: client,
+		logger:        logger,
+		cfg:           cfg,
+		repo:          repo,
+		httpClient:    client,
+		mu:            &sync.Mutex{},
+		nextRetryTime: time.Now(),
 	}
 }
 
@@ -120,14 +128,43 @@ func (a *Accrual) genOrdersToProcessChan(ctx context.Context, params *processJob
 	return ordersChan
 }
 
+func (a *Accrual) getReqBackoff(resp *http.Response) time.Duration {
+	if resp != nil {
+		if resp.StatusCode == http.StatusTooManyRequests {
+			retryAfter := resp.Header.Get("Retry-After")
+			parsedHeaderValue, err := strconv.Atoi(retryAfter)
+			a.mu.Lock()
+			a.nextRetryTime = time.Now().Add(baseBackoffMaxWait * time.Second)
+			if err == nil {
+				a.nextRetryTime = time.Now().Add(time.Duration(parsedHeaderValue) * time.Second)
+			}
+			a.mu.Unlock()
+		}
+	}
+	retryIn := a.nextRetryTime.Sub(time.Now())
+	if retryIn <= 0 {
+		retryIn = 0
+	}
+	return retryIn
+}
+
 func (a *Accrual) sendRequestToAccrual(orderNumber string) (*dto.AccrualResponseDTO, error) {
 	url := "/" + orderNumber
-	resp, err := a.httpClient.Get(url, "application/json")
+	time.Sleep(a.getReqBackoff(nil))
+	bodyBytes, resp, err := a.httpClient.Get(url, "application/json")
+	for resp != nil && resp.StatusCode == http.StatusTooManyRequests {
+		time.Sleep(a.getReqBackoff(resp))
+		retriedBodyBytes, retriedResp, retryErr := a.httpClient.Get(url, "application/json")
+		resp = retriedResp
+		err = retryErr
+		bodyBytes = retriedBodyBytes
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("sendRequestToAccrual GET request: %w", err)
 	}
 	responseDTO := new(dto.AccrualResponseDTO)
-	if unmarshalErr := json.Unmarshal(resp, responseDTO); unmarshalErr != nil {
+	if unmarshalErr := json.Unmarshal(bodyBytes, responseDTO); unmarshalErr != nil {
 		return nil, fmt.Errorf("sendRequestToAccrual unmarshal response: %w", unmarshalErr)
 	}
 

@@ -80,7 +80,7 @@ func (s *Server) Start(ctx context.Context, runTimeError chan<- error) error {
 		orderController,
 		balanceController,
 	)
-	httpClient := httpclient.NewHTTPClient(s.config.AccrualEndPoint+"/api/orders", s.logger, true)
+	httpClient := httpclient.NewHTTPClient(s.config.AccrualEndPoint+"/api/orders", s.logger, false)
 	s.accrual = accrual.New(s.logger, s.config, s.repos.Order(), httpClient)
 
 	go func() {

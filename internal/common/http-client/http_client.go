@@ -11,30 +11,30 @@ import (
 	"github.com/Kopleman/gophermart/internal/common/log"
 )
 
-func (c *HTTPClient) Post(url, contentType string, bodyBytes []byte) ([]byte, error) {
+func (c *HTTPClient) Post(url, contentType string, bodyBytes []byte) ([]byte, *http.Response, error) {
 	body := bytes.NewBuffer(bodyBytes)
 	finalURL := c.BaseURL + url
 	var respBody []byte
 
 	req, err := http.NewRequest(http.MethodPost, finalURL, body)
 	if err != nil {
-		return nil, fmt.Errorf("error creating request: %w", err)
+		return nil, nil, fmt.Errorf("error creating request: %w", err)
 	}
 	req.Header.Set(common.ContentType, contentType)
 	req.Header.Set(common.AcceptEncoding, "gzip")
 
 	res, respErr := c.client.Do(req)
 	if respErr != nil {
-		return nil, fmt.Errorf("failed to send post req to '%s': %w", finalURL, respErr)
+		return nil, res, fmt.Errorf("failed to send post req to '%s': %w", finalURL, respErr)
 	}
 
 	if res.StatusCode >= http.StatusBadRequest {
-		return nil, fmt.Errorf("failed to send post req to '%s': status code %d", finalURL, res.StatusCode)
+		return nil, res, fmt.Errorf("failed to send post req to '%s': status code %d", finalURL, res.StatusCode)
 	}
 
 	gz, gzipErr := gzip.NewReader(res.Body)
 	if gzipErr != nil {
-		return nil, fmt.Errorf("failed to decompress response: %w", err)
+		return nil, res, fmt.Errorf("failed to decompress response: %w", err)
 	}
 	defer func() {
 		if gzErr := gz.Close(); gzErr != nil {
@@ -50,29 +50,29 @@ func (c *HTTPClient) Post(url, contentType string, bodyBytes []byte) ([]byte, er
 
 	respBody, err = io.ReadAll(gz)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse response body: %w", err)
+		return nil, res, fmt.Errorf("failed to parse response body: %w", err)
 	}
 
-	return respBody, nil
+	return respBody, res, nil
 }
 
-func (c *HTTPClient) Get(url, contentType string) ([]byte, error) {
+func (c *HTTPClient) Get(url, contentType string) ([]byte, *http.Response, error) {
 	finalURL := c.BaseURL + url
 	var respBody []byte
 
 	req, err := http.NewRequest(http.MethodGet, finalURL, bytes.NewBuffer(make([]byte, 0)))
 	if err != nil {
-		return nil, fmt.Errorf("error creating request: %w", err)
+		return nil, nil, fmt.Errorf("error creating request: %w", err)
 	}
 	req.Header.Set(common.ContentType, contentType)
 
 	res, respErr := c.client.Do(req)
 	if respErr != nil {
-		return nil, fmt.Errorf("failed to send post req to '%s': %w", finalURL, respErr)
+		return nil, res, fmt.Errorf("failed to send get req to '%s': %w", finalURL, respErr)
 	}
 
 	if res.StatusCode >= http.StatusBadRequest {
-		return nil, fmt.Errorf("failed to send post req to '%s': status code %d", finalURL, res.StatusCode)
+		return nil, res, fmt.Errorf("failed to send get req to '%s': status code %d", finalURL, res.StatusCode)
 	}
 
 	defer func() {
@@ -83,10 +83,10 @@ func (c *HTTPClient) Get(url, contentType string) ([]byte, error) {
 
 	respBody, err = io.ReadAll(res.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse response body: %w", err)
+		return nil, res, fmt.Errorf("failed to parse response body: %w", err)
 	}
 
-	return respBody, nil
+	return respBody, res, nil
 }
 
 type HTTPClient struct {

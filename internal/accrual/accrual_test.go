@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http"
 	"sync"
 	"testing"
 
@@ -17,21 +18,12 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type mockHTTPClient struct {
-	mock.Mock
-}
-
-func (m *mockHTTPClient) Get(url, contentType string) ([]byte, error) {
-	args := m.Called(url, contentType)
-	return args.Get(0).([]byte), args.Error(1) //nolint:all // its safe
-}
-
 func TestAccrual_sendRequestToAccrual(t *testing.T) {
 	orderNumber := "123"
 	expectedURL := "/" + orderNumber
 
 	t.Run("successful request", func(t *testing.T) {
-		client := new(mockHTTPClient)
+		client := new(mocks.HTTPClient)
 		expectedResponse := dto.AccrualResponseDTO{
 			Order:   orderNumber,
 			Status:  dto.AccrualStatusTypePROCESSED,
@@ -40,7 +32,7 @@ func TestAccrual_sendRequestToAccrual(t *testing.T) {
 		*expectedResponse.Accrual = 100.5
 		responseData, _ := json.Marshal(expectedResponse)
 
-		client.On("Get", expectedURL, "application/json").Return(responseData, nil)
+		client.On("Get", expectedURL, "application/json").Return(responseData, nil, nil)
 
 		a := New(log.MockLogger{}, &config.Config{}, new(mocks.OrderRepoForAccrual), client)
 		response, err := a.sendRequestToAccrual(orderNumber)
@@ -51,9 +43,9 @@ func TestAccrual_sendRequestToAccrual(t *testing.T) {
 	})
 
 	t.Run("http error", func(t *testing.T) {
-		client := new(mockHTTPClient)
+		client := new(mocks.HTTPClient)
 		expectedErr := errors.New("connection error")
-		client.On("Get", expectedURL, "application/json").Return([]byte{}, expectedErr)
+		client.On("Get", expectedURL, "application/json").Return([]byte{}, nil, expectedErr)
 
 		a := New(log.MockLogger{}, &config.Config{}, new(mocks.OrderRepoForAccrual), client)
 		_, err := a.sendRequestToAccrual(orderNumber)
@@ -63,8 +55,8 @@ func TestAccrual_sendRequestToAccrual(t *testing.T) {
 	})
 
 	t.Run("invalid json", func(t *testing.T) {
-		client := new(mockHTTPClient)
-		client.On("Get", expectedURL, "application/json").Return([]byte("{invalid}"), nil)
+		client := new(mocks.HTTPClient)
+		client.On("Get", expectedURL, "application/json").Return([]byte("{invalid}"), nil, nil)
 
 		a := New(log.MockLogger{}, &config.Config{}, new(mocks.OrderRepoForAccrual), client)
 		_, err := a.sendRequestToAccrual(orderNumber)
@@ -72,6 +64,34 @@ func TestAccrual_sendRequestToAccrual(t *testing.T) {
 		assert.ErrorContains(t, err, "unmarshal response")
 		client.AssertExpectations(t)
 	})
+
+	t.Run("429 response", func(t *testing.T) {
+		client := new(mocks.HTTPClient)
+		expectedResponse := dto.AccrualResponseDTO{
+			Order:   orderNumber,
+			Status:  dto.AccrualStatusTypePROCESSED,
+			Accrual: new(float64),
+		}
+		*expectedResponse.Accrual = 100.5
+		responseBytes, _ := json.Marshal(expectedResponse)
+		firstResponse := &http.Response{
+			StatusCode: http.StatusTooManyRequests,
+			Header:     make(http.Header),
+		}
+		firstResponse.Header.Add("Retry-After", "1")
+		firstResponse.StatusCode = http.StatusTooManyRequests
+
+		client.On("Get", expectedURL, "application/json").Return(nil, firstResponse, nil).Once()
+		client.On("Get", expectedURL, "application/json").Return(responseBytes, nil, nil).Once()
+
+		a := New(log.MockLogger{}, &config.Config{}, new(mocks.OrderRepoForAccrual), client)
+		response, err := a.sendRequestToAccrual(orderNumber)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedResponse.Order, response.Order)
+		client.AssertExpectations(t)
+	})
+
 }
 
 func TestAccrual_registerOrder(t *testing.T) {
@@ -86,7 +106,7 @@ func TestAccrual_registerOrder(t *testing.T) {
 		}
 		responseData, _ := json.Marshal(expectedResponse)
 		repo := new(mocks.OrderRepoForAccrual)
-		client := new(mockHTTPClient)
+		client := new(mocks.HTTPClient)
 		client.On("Get", mock.Anything, mock.Anything).Return(responseData, nil)
 		repo.On("RegisterOrderProcessing", ctx, order.OrderNumber).Return(nil)
 
@@ -102,7 +122,7 @@ func TestAccrual_registerOrder(t *testing.T) {
 		expectedResponse := struct{}{}
 		responseData, _ := json.Marshal(expectedResponse)
 		repo := new(mocks.OrderRepoForAccrual)
-		client := new(mockHTTPClient)
+		client := new(mocks.HTTPClient)
 		expectedErr := errors.New("accrual error")
 		client.On("Get", mock.Anything, mock.Anything).Return(responseData, expectedErr)
 
@@ -121,7 +141,7 @@ func TestAccrual_registerOrder(t *testing.T) {
 		}
 		responseData, _ := json.Marshal(expectedResponse)
 		repo := new(mocks.OrderRepoForAccrual)
-		client := new(mockHTTPClient)
+		client := new(mocks.HTTPClient)
 		expectedErr := errors.New("database error")
 		client.On("Get", mock.Anything, mock.Anything).Return(responseData, nil)
 		repo.On("RegisterOrderProcessing", ctx, order.OrderNumber).Return(expectedErr)
@@ -140,7 +160,7 @@ func TestAccrual_processOrder(t *testing.T) {
 
 	t.Run("successful processing", func(t *testing.T) {
 		repo := new(mocks.OrderRepoForAccrual)
-		client := new(mockHTTPClient)
+		client := new(mocks.HTTPClient)
 
 		expectedProcessingResponse := dto.AccrualResponseDTO{
 			Order:   order.OrderNumber,
@@ -171,7 +191,7 @@ func TestAccrual_processOrder(t *testing.T) {
 
 	t.Run("invalid status handling", func(t *testing.T) {
 		repo := new(mocks.OrderRepoForAccrual)
-		client := new(mockHTTPClient)
+		client := new(mocks.HTTPClient)
 		expectedResponse := dto.AccrualResponseDTO{
 			Order:  order.OrderNumber,
 			Status: dto.AccrualStatusTypeINVALID,
@@ -200,7 +220,7 @@ func TestAccrual_workerFunctions(t *testing.T) {
 
 	t.Run("register worker", func(t *testing.T) {
 		repo := new(mocks.OrderRepoForAccrual)
-		client := new(mockHTTPClient)
+		client := new(mocks.HTTPClient)
 		client.On("Get", mock.Anything, mock.Anything).Return([]byte{}, nil)
 		repo.On("RegisterOrderProcessing", ctx, order.OrderNumber).Return(nil)
 
@@ -212,8 +232,8 @@ func TestAccrual_workerFunctions(t *testing.T) {
 
 	t.Run("processing worker", func(t *testing.T) {
 		repo := new(mocks.OrderRepoForAccrual)
-		client := new(mockHTTPClient)
-		client.On("Get", mock.Anything, mock.Anything).Return([]byte{}, nil)
+		client := new(mocks.HTTPClient)
+		client.On("Get", mock.Anything, mock.Anything).Return([]byte{}, nil, nil)
 		repo.On("StoreAccrualCalculation", ctx, mock.Anything).Return(nil)
 
 		wg := &sync.WaitGroup{}

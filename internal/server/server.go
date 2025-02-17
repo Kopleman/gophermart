@@ -17,6 +17,7 @@ import (
 	"github.com/Kopleman/gophermart/sql"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/compress"
 	fiberLogger "github.com/gofiber/fiber/v2/middleware/logger"
 )
 
@@ -71,6 +72,7 @@ func (s *Server) Start(ctx context.Context, runTimeError chan<- error) error {
 
 	app := fiber.New()
 	app.Use(fiberLogger.New())
+	app.Use(compress.New())
 
 	s.app = app
 

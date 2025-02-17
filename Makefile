@@ -11,6 +11,10 @@ build:
 run:
 	go run ./cmd/gophermart/main.go
 
+.PHONY: test
+test:
+	go test ./...
+
 .PHONY: migrate
 migrate:
 	migrate -path "$(MIGRATIONS_DIR)" -database "$(DATABASE_URI)" $(filter-out $@,$(MAKECMDGOALS))

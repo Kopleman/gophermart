@@ -152,18 +152,21 @@ func (a *Accrual) sendRequestToAccrual(orderNumber string) (*dto.AccrualResponse
 	url := "/" + orderNumber
 	time.Sleep(a.getReqBackoff(nil))
 	bodyBytes, resp, err := a.httpClient.Get(url, "application/json")
+	if resp != nil {
+		resp.Body.Close() //nolint:all // its closed in client
+	}
 	for resp != nil && resp.StatusCode == http.StatusTooManyRequests {
 		time.Sleep(a.getReqBackoff(resp))
 		retriedBodyBytes, retriedResp, retryErr := a.httpClient.Get(
 			url,
 			"application/json",
 		)
+		if retriedResp != nil {
+			retriedResp.Body.Close() //nolint:all // its closed in client
+		}
 		resp = retriedResp
 		err = retryErr
 		bodyBytes = retriedBodyBytes
-	}
-	if resp != nil {
-		defer resp.Body.Close() //nolint:all // its closed in client
 	}
 
 	if err != nil {

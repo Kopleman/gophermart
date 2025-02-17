@@ -153,6 +153,9 @@ func (a *Accrual) sendRequestToAccrual(orderNumber string) (*dto.AccrualResponse
 	time.Sleep(a.getReqBackoff(nil))
 	bodyBytes, resp, err := a.httpClient.Get(url, "application/json") //nolint:bodyclose // its closed in client
 	for resp != nil && resp.StatusCode == http.StatusTooManyRequests {
+		if bodyParseErr := resp.Body.Close(); bodyParseErr != nil {
+			a.logger.Error(bodyParseErr)
+		}
 		time.Sleep(a.getReqBackoff(resp))
 		retriedBodyBytes, retriedResp, retryErr := a.httpClient.Get( //nolint:bodyclose // its closed in client
 			url,

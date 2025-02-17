@@ -151,19 +151,19 @@ func (a *Accrual) getReqBackoff(resp *http.Response) time.Duration {
 func (a *Accrual) sendRequestToAccrual(orderNumber string) (*dto.AccrualResponseDTO, error) {
 	url := "/" + orderNumber
 	time.Sleep(a.getReqBackoff(nil))
-	bodyBytes, resp, err := a.httpClient.Get(url, "application/json") //nolint:bodyclose // its closed in client
+	bodyBytes, resp, err := a.httpClient.Get(url, "application/json")
 	for resp != nil && resp.StatusCode == http.StatusTooManyRequests {
-		if bodyParseErr := resp.Body.Close(); bodyParseErr != nil {
-			a.logger.Error(bodyParseErr)
-		}
 		time.Sleep(a.getReqBackoff(resp))
-		retriedBodyBytes, retriedResp, retryErr := a.httpClient.Get( //nolint:bodyclose // its closed in client
+		retriedBodyBytes, retriedResp, retryErr := a.httpClient.Get(
 			url,
 			"application/json",
 		)
 		resp = retriedResp
 		err = retryErr
 		bodyBytes = retriedBodyBytes
+	}
+	if resp != nil {
+		defer resp.Body.Close() //nolint:all // its closed in client
 	}
 
 	if err != nil {

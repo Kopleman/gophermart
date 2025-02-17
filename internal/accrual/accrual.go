@@ -141,7 +141,7 @@ func (a *Accrual) getReqBackoff(resp *http.Response) time.Duration {
 			a.mu.Unlock()
 		}
 	}
-	retryIn := a.nextRetryTime.Sub(time.Now())
+	retryIn := time.Until(a.nextRetryTime)
 	if retryIn <= 0 {
 		retryIn = 0
 	}
@@ -151,10 +151,13 @@ func (a *Accrual) getReqBackoff(resp *http.Response) time.Duration {
 func (a *Accrual) sendRequestToAccrual(orderNumber string) (*dto.AccrualResponseDTO, error) {
 	url := "/" + orderNumber
 	time.Sleep(a.getReqBackoff(nil))
-	bodyBytes, resp, err := a.httpClient.Get(url, "application/json")
+	bodyBytes, resp, err := a.httpClient.Get(url, "application/json") //nolint:bodyclose // its closed in client
 	for resp != nil && resp.StatusCode == http.StatusTooManyRequests {
 		time.Sleep(a.getReqBackoff(resp))
-		retriedBodyBytes, retriedResp, retryErr := a.httpClient.Get(url, "application/json")
+		retriedBodyBytes, retriedResp, retryErr := a.httpClient.Get( //nolint:bodyclose // its closed in client
+			url,
+			"application/json",
+		)
 		resp = retriedResp
 		err = retryErr
 		bodyBytes = retriedBodyBytes

@@ -1,4 +1,3 @@
-//nolint:dupl // test-cases dupes
 package accrual
 
 import (
@@ -91,7 +90,6 @@ func TestAccrual_sendRequestToAccrual(t *testing.T) {
 		assert.Equal(t, expectedResponse.Order, response.Order)
 		client.AssertExpectations(t)
 	})
-
 }
 
 func TestAccrual_registerOrder(t *testing.T) {

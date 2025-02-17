@@ -56,6 +56,12 @@ func (b *BalanceService) GetUserBalanceDTO(ctx context.Context, userID uuid.UUID
 }
 
 func (b *BalanceService) MakeWithdraw(ctx context.Context, dto *dto.WithdrawDTO) error {
+	if dto == nil {
+		return errors.New("dto is nil")
+	}
+	if dto.Amount.LessThanOrEqual(decimal.Zero) {
+		return errors.New("amount must be greater than zero")
+	}
 	err := b.balanceRepo.MakeWithdraw(ctx, dto)
 	if err != nil {
 		if errors.Is(err, pgxstore.ErrNotEnoughBalance) {

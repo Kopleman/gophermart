@@ -133,12 +133,15 @@ func (a *Accrual) getReqBackoff(resp *http.Response) time.Duration {
 		if resp.StatusCode == http.StatusTooManyRequests {
 			retryAfter := resp.Header.Get("Retry-After")
 			parsedHeaderValue, err := strconv.Atoi(retryAfter)
-			a.mu.Lock()
-			a.nextRetryTime = time.Now().Add(baseBackoffMaxWait * time.Second)
+			nextRetryTime := time.Now().Add(baseBackoffMaxWait * time.Second)
 			if err == nil {
-				a.nextRetryTime = time.Now().Add(time.Duration(parsedHeaderValue) * time.Second)
+				nextRetryTime = time.Now().Add(time.Duration(parsedHeaderValue) * time.Second)
 			}
-			a.mu.Unlock()
+			if nextRetryTime.After(a.nextRetryTime) {
+				a.mu.Lock()
+				a.nextRetryTime = nextRetryTime
+				a.mu.Unlock()
+			}
 		}
 	}
 	retryIn := time.Until(a.nextRetryTime)
@@ -152,9 +155,11 @@ func (a *Accrual) sendRequestToAccrual(orderNumber string) (*dto.AccrualResponse
 	url := "/" + orderNumber
 	time.Sleep(a.getReqBackoff(nil))
 	bodyBytes, resp, err := a.httpClient.Get(url, "application/json")
-	if resp != nil {
-		resp.Body.Close() //nolint:all // its closed in client
-	}
+	defer func() {
+		if resp != nil {
+			resp.Body.Close() //nolint:all // its closed in client
+		}
+	}()
 	for resp != nil && resp.StatusCode == http.StatusTooManyRequests {
 		time.Sleep(a.getReqBackoff(resp))
 		retriedBodyBytes, retriedResp, retryErr := a.httpClient.Get(

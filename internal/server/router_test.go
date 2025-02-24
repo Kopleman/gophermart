@@ -26,7 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var nullIdToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAifQ.PwlKpYiTzOArQcGsAKQHO13kyVxZNi3_0G81nXNZ4p0"
+var nullIDToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAifQ.PwlKpYiTzOArQcGsAKQHO13kyVxZNi3_0G81nXNZ4p0"
 
 func setupServer() (*Server, *mocks.UserService, *mocks.OrderService, *mocks.BalanceService) {
 	cfg := &config.Config{JWTSecret: "secret_key"}
@@ -339,7 +339,7 @@ func TestGetWithdrawalsRouterPath_Server(t *testing.T) {
 
 		userService.On("GetWithdrawals", mock.Anything, uuid.Nil).Return(expectedDtos, nil).Once()
 
-		gotStatusCode, gotResponse := testRequest(t, app, "GET", "/api/user/withdrawals", http.NoBody, &nullIdToken)
+		gotStatusCode, gotResponse := testRequest(t, app, "GET", "/api/user/withdrawals", http.NoBody, &nullIDToken)
 		assert.Equal(t, http.StatusOK, gotStatusCode)
 		assert.JSONEq(
 			t,
@@ -356,7 +356,7 @@ func TestGetWithdrawalsRouterPath_Server(t *testing.T) {
 
 		userService.On("GetWithdrawals", mock.Anything, uuid.Nil).Return(expectedDtos, nil).Once()
 
-		gotStatusCode, _ := testRequest(t, app, "GET", "/api/user/withdrawals", http.NoBody, &nullIdToken)
+		gotStatusCode, _ := testRequest(t, app, "GET", "/api/user/withdrawals", http.NoBody, &nullIDToken)
 		assert.Equal(t, http.StatusNoContent, gotStatusCode)
 	})
 
@@ -369,7 +369,7 @@ func TestGetWithdrawalsRouterPath_Server(t *testing.T) {
 	t.Run("500 error", func(t *testing.T) {
 		userService.On("GetWithdrawals", mock.Anything, uuid.Nil).Return(nil, errors.New("something bad happened")).Once()
 
-		gotStatusCode, gotResponse := testRequest(t, app, "GET", "/api/user/withdrawals", http.NoBody, &nullIdToken)
+		gotStatusCode, gotResponse := testRequest(t, app, "GET", "/api/user/withdrawals", http.NoBody, &nullIDToken)
 		assert.Equal(t, http.StatusInternalServerError, gotStatusCode)
 		assert.Equal(t, "Internal Server Error", gotResponse)
 	})
@@ -387,7 +387,7 @@ func TestGetUserBalanceRouterPath_Server(t *testing.T) {
 
 		balanceService.On("GetUserBalanceDTO", mock.Anything, uuid.Nil).Return(expectedDto, nil).Once()
 
-		gotStatusCode, gotResponse := testRequest(t, app, "GET", "/api/user/balance", http.NoBody, &nullIdToken)
+		gotStatusCode, gotResponse := testRequest(t, app, "GET", "/api/user/balance", http.NoBody, &nullIDToken)
 		assert.Equal(t, http.StatusOK, gotStatusCode)
 		assert.JSONEq(
 			t,
@@ -406,7 +406,7 @@ func TestGetUserBalanceRouterPath_Server(t *testing.T) {
 	t.Run("500 error", func(t *testing.T) {
 		balanceService.On("GetUserBalanceDTO", mock.Anything, uuid.Nil).Return(nil, errors.New("something bad happened")).Once()
 
-		gotStatusCode, gotResponse := testRequest(t, app, "GET", "/api/user/balance", http.NoBody, &nullIdToken)
+		gotStatusCode, gotResponse := testRequest(t, app, "GET", "/api/user/balance", http.NoBody, &nullIDToken)
 		assert.Equal(t, http.StatusInternalServerError, gotStatusCode)
 		assert.Equal(t, "Internal Server Error", gotResponse)
 	})
@@ -430,7 +430,7 @@ func TestMakeWithdrawRouterPath_Server(t *testing.T) {
 
 		balanceService.On("MakeWithdraw", mock.Anything, expectedDto).Return(nil).Once()
 
-		gotStatusCode, _ := testRequest(t, app, "POST", "/api/user/balance/withdraw", body, &nullIdToken)
+		gotStatusCode, _ := testRequest(t, app, "POST", "/api/user/balance/withdraw", body, &nullIDToken)
 		assert.Equal(t, http.StatusOK, gotStatusCode)
 	})
 
@@ -453,7 +453,7 @@ func TestMakeWithdrawRouterPath_Server(t *testing.T) {
 		}
 		balanceService.On("MakeWithdraw", mock.Anything, expectedDto).Return(errors.New("something bad happened")).Once()
 
-		gotStatusCode, gotResponse := testRequest(t, app, "POST", "/api/user/balance/withdraw", body, &nullIdToken)
+		gotStatusCode, gotResponse := testRequest(t, app, "POST", "/api/user/balance/withdraw", body, &nullIDToken)
 		assert.Equal(t, http.StatusInternalServerError, gotStatusCode)
 		assert.Equal(t, "Internal Server Error", gotResponse)
 	})
@@ -488,7 +488,7 @@ func TestMakeWithdrawRouterPath_Server(t *testing.T) {
 	}
 	for _, v := range testTable {
 		t.Run(fmt.Sprintf("Request validation for - %s", fmt.Sprint(v.body)), func(t *testing.T) {
-			gotStatusCode, gotResponse := testRequest(t, app, "POST", "/api/user/balance/withdraw", strings.NewReader(v.body), &nullIdToken)
+			gotStatusCode, gotResponse := testRequest(t, app, "POST", "/api/user/balance/withdraw", strings.NewReader(v.body), &nullIDToken)
 			assert.Equal(t, http.StatusUnprocessableEntity, gotStatusCode)
 			assert.Equal(t, "Unprocessable Entity", gotResponse)
 		})
@@ -501,7 +501,7 @@ func TestAddOrderRouterPath_Server(t *testing.T) {
 
 	t.Run("successful order place", func(t *testing.T) {
 		orderNumber := "49927398716"
-		body := strings.NewReader(fmt.Sprintf(`%s`, orderNumber))
+		body := strings.NewReader(orderNumber)
 		expectedDto := &dto.CreateOrderDTO{
 			OrderNumber: orderNumber,
 			UserID:      uuid.Nil,
@@ -510,13 +510,13 @@ func TestAddOrderRouterPath_Server(t *testing.T) {
 		orderService.On("GetOrderByNumber", mock.Anything, orderNumber).Return(nil, service.ErrNotFound).Once()
 		orderService.On("CreateOrder", mock.Anything, expectedDto).Return(nil).Once()
 
-		gotStatusCode, _ := testRequest(t, app, "POST", "/api/user/orders", body, &nullIdToken)
+		gotStatusCode, _ := testRequest(t, app, "POST", "/api/user/orders", body, &nullIDToken)
 		assert.Equal(t, http.StatusAccepted, gotStatusCode)
 	})
 
 	t.Run("place same order", func(t *testing.T) {
 		orderNumber := "49927398716"
-		body := strings.NewReader(fmt.Sprintf(`%s`, orderNumber))
+		body := strings.NewReader(orderNumber)
 		expectedDto := &dto.OrderDTO{
 			OrderNumber: orderNumber,
 			UserID:      uuid.Nil,
@@ -524,7 +524,7 @@ func TestAddOrderRouterPath_Server(t *testing.T) {
 
 		orderService.On("GetOrderByNumber", mock.Anything, orderNumber).Return(expectedDto, nil).Once()
 
-		gotStatusCode, _ := testRequest(t, app, "POST", "/api/user/orders", body, &nullIdToken)
+		gotStatusCode, _ := testRequest(t, app, "POST", "/api/user/orders", body, &nullIDToken)
 		assert.Equal(t, http.StatusOK, gotStatusCode)
 	})
 
@@ -536,17 +536,17 @@ func TestAddOrderRouterPath_Server(t *testing.T) {
 
 	t.Run("500 error", func(t *testing.T) {
 		orderNumber := "49927398716"
-		body := strings.NewReader(fmt.Sprintf(`%s`, orderNumber))
+		body := strings.NewReader(orderNumber)
 		orderService.On("GetOrderByNumber", mock.Anything, orderNumber).Return(nil, errors.New("something bad happened")).Once()
 
-		gotStatusCode, gotResponse := testRequest(t, app, "POST", "/api/user/orders", body, &nullIdToken)
+		gotStatusCode, gotResponse := testRequest(t, app, "POST", "/api/user/orders", body, &nullIDToken)
 		assert.Equal(t, http.StatusInternalServerError, gotStatusCode)
 		assert.Equal(t, "Internal Server Error", gotResponse)
 	})
 
 	t.Run("500 error - 2", func(t *testing.T) {
 		orderNumber := "49927398716"
-		body := strings.NewReader(fmt.Sprintf(`%s`, orderNumber))
+		body := strings.NewReader(orderNumber)
 		expectedDto := &dto.CreateOrderDTO{
 			OrderNumber: orderNumber,
 			UserID:      uuid.Nil,
@@ -555,39 +555,39 @@ func TestAddOrderRouterPath_Server(t *testing.T) {
 		orderService.On("GetOrderByNumber", mock.Anything, orderNumber).Return(nil, service.ErrNotFound).Once()
 		orderService.On("CreateOrder", mock.Anything, expectedDto).Return(errors.New("something bad happened")).Once()
 
-		gotStatusCode, gotResponse := testRequest(t, app, "POST", "/api/user/orders", body, &nullIdToken)
+		gotStatusCode, gotResponse := testRequest(t, app, "POST", "/api/user/orders", body, &nullIDToken)
 		assert.Equal(t, http.StatusInternalServerError, gotStatusCode)
 		assert.Equal(t, "Internal Server Error", gotResponse)
 	})
 
 	t.Run("bad order num", func(t *testing.T) {
 		orderNumber := "4992739871"
-		body := strings.NewReader(fmt.Sprintf(`%s`, orderNumber))
-		gotStatusCode, gotResponse := testRequest(t, app, "POST", "/api/user/orders", body, &nullIdToken)
+		body := strings.NewReader(orderNumber)
+		gotStatusCode, gotResponse := testRequest(t, app, "POST", "/api/user/orders", body, &nullIDToken)
 		assert.Equal(t, http.StatusUnprocessableEntity, gotStatusCode)
 		assert.Equal(t, "Unprocessable Entity", gotResponse)
 	})
 
 	t.Run("bad order num", func(t *testing.T) {
 		orderNumber := ""
-		body := strings.NewReader(fmt.Sprintf(`%s`, orderNumber))
-		gotStatusCode, gotResponse := testRequest(t, app, "POST", "/api/user/orders", body, &nullIdToken)
+		body := strings.NewReader(orderNumber)
+		gotStatusCode, gotResponse := testRequest(t, app, "POST", "/api/user/orders", body, &nullIDToken)
 		assert.Equal(t, http.StatusBadRequest, gotStatusCode)
 		assert.Equal(t, "Bad Request", gotResponse)
 	})
 
 	t.Run("order of another user", func(t *testing.T) {
 		orderNumber := "49927398716"
-		body := strings.NewReader(fmt.Sprintf(`%s`, orderNumber))
-		userUuid := uuid.New()
+		body := strings.NewReader(orderNumber)
+		userUUID := uuid.New()
 		expectedDto := &dto.OrderDTO{
 			OrderNumber: orderNumber,
-			UserID:      userUuid,
+			UserID:      userUUID,
 		}
 
 		orderService.On("GetOrderByNumber", mock.Anything, orderNumber).Return(expectedDto, nil).Once()
 
-		gotStatusCode, gotResponse := testRequest(t, app, "POST", "/api/user/orders", body, &nullIdToken)
+		gotStatusCode, gotResponse := testRequest(t, app, "POST", "/api/user/orders", body, &nullIDToken)
 		assert.Equal(t, http.StatusConflict, gotStatusCode)
 		assert.Equal(t, "Conflict", gotResponse)
 	})
@@ -617,7 +617,7 @@ func TestGetOrdersRouterPath_Server(t *testing.T) {
 
 		orderService.On("GetUserOrders", mock.Anything, uuid.Nil).Return(orderDtos, nil).Once()
 
-		gotStatusCode, gotResponse := testRequest(t, app, "GET", "/api/user/orders", http.NoBody, &nullIdToken)
+		gotStatusCode, gotResponse := testRequest(t, app, "GET", "/api/user/orders", http.NoBody, &nullIDToken)
 		assert.Equal(t, http.StatusOK, gotStatusCode)
 		assert.JSONEq(
 			t,
@@ -632,7 +632,7 @@ func TestGetOrdersRouterPath_Server(t *testing.T) {
 	t.Run("successful fetch with empty order list", func(t *testing.T) {
 		orderService.On("GetUserOrders", mock.Anything, uuid.Nil).Return(nil, nil).Once()
 
-		gotStatusCode, gotResponse := testRequest(t, app, "GET", "/api/user/orders", http.NoBody, &nullIdToken)
+		gotStatusCode, gotResponse := testRequest(t, app, "GET", "/api/user/orders", http.NoBody, &nullIDToken)
 		assert.Equal(t, http.StatusNoContent, gotStatusCode)
 		assert.Equal(t, "", gotResponse)
 	})
@@ -646,7 +646,7 @@ func TestGetOrdersRouterPath_Server(t *testing.T) {
 	t.Run("500 error", func(t *testing.T) {
 		orderService.On("GetUserOrders", mock.Anything, uuid.Nil).Return(nil, errors.New("something bad happened")).Once()
 
-		gotStatusCode, gotResponse := testRequest(t, app, "GET", "/api/user/orders", http.NoBody, &nullIdToken)
+		gotStatusCode, gotResponse := testRequest(t, app, "GET", "/api/user/orders", http.NoBody, &nullIDToken)
 		assert.Equal(t, http.StatusInternalServerError, gotStatusCode)
 		assert.Equal(t, "Internal Server Error", gotResponse)
 	})

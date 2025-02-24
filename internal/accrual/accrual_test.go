@@ -105,7 +105,7 @@ func TestAccrual_registerOrder(t *testing.T) {
 		responseData, _ := json.Marshal(expectedResponse)
 		repo := new(mocks.OrderRepoForAccrual)
 		client := new(mocks.HTTPClient)
-		client.On("Get", mock.Anything, mock.Anything).Return(responseData, nil)
+		client.On("Get", mock.Anything, mock.Anything).Return(responseData, nil, nil)
 		repo.On("RegisterOrderProcessing", ctx, order.OrderNumber).Return(nil)
 
 		a := New(log.MockLogger{}, &config.Config{}, repo, client)
@@ -122,7 +122,7 @@ func TestAccrual_registerOrder(t *testing.T) {
 		repo := new(mocks.OrderRepoForAccrual)
 		client := new(mocks.HTTPClient)
 		expectedErr := errors.New("accrual error")
-		client.On("Get", mock.Anything, mock.Anything).Return(responseData, expectedErr)
+		client.On("Get", mock.Anything, mock.Anything).Return(responseData, nil, expectedErr).Once()
 
 		a := New(log.MockLogger{}, &config.Config{}, repo, client)
 		err := a.registerOrder(ctx, order)
@@ -141,7 +141,7 @@ func TestAccrual_registerOrder(t *testing.T) {
 		repo := new(mocks.OrderRepoForAccrual)
 		client := new(mocks.HTTPClient)
 		expectedErr := errors.New("database error")
-		client.On("Get", mock.Anything, mock.Anything).Return(responseData, nil)
+		client.On("Get", mock.Anything, mock.Anything).Return(responseData, nil, nil).Once()
 		repo.On("RegisterOrderProcessing", ctx, order.OrderNumber).Return(expectedErr)
 
 		a := New(log.MockLogger{}, &config.Config{}, repo, client)
@@ -166,7 +166,7 @@ func TestAccrual_processOrder(t *testing.T) {
 			Accrual: new(float64),
 		}
 		responseData, _ := json.Marshal(expectedProcessingResponse)
-		client.On("Get", mock.Anything, mock.Anything).Return(responseData, nil).Once()
+		client.On("Get", mock.Anything, mock.Anything).Return(responseData, nil, nil).Once()
 
 		expectedProcessedResponse := dto.AccrualResponseDTO{
 			Order:   order.OrderNumber,
@@ -175,7 +175,7 @@ func TestAccrual_processOrder(t *testing.T) {
 		}
 		*expectedProcessedResponse.Accrual = 100.5
 		responseData, _ = json.Marshal(expectedProcessedResponse)
-		client.On("Get", mock.Anything, mock.Anything).Return(responseData, nil).Once()
+		client.On("Get", mock.Anything, mock.Anything).Return(responseData, nil, nil).Once()
 
 		repo.On("StoreAccrualCalculation", ctx, mock.Anything).Return(nil)
 
@@ -196,7 +196,7 @@ func TestAccrual_processOrder(t *testing.T) {
 		}
 		responseData, _ := json.Marshal(expectedResponse)
 
-		client.On("Get", mock.Anything, mock.Anything).Return(responseData, nil)
+		client.On("Get", mock.Anything, mock.Anything).Return(responseData, nil, nil).Once()
 		repo.On("StoreAccrualCalculation", ctx, mock.Anything).Return(nil)
 
 		a := New(log.MockLogger{}, &config.Config{}, repo, client)

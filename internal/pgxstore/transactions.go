@@ -29,7 +29,7 @@ func (p *PGXStore) MakeWithdraw(ctx context.Context, params MakeWithdrawParams) 
 		return fmt.Errorf("pgxstore.MakeWithdraw could not get last user transaction: %w", lastTxErr)
 	}
 
-	if params.Amount.GreaterThanOrEqual(lastUserTx.NewBalance) {
+	if params.Amount.GreaterThan(lastUserTx.NewBalance) {
 		return ErrNotEnoughBalance
 	}
 	withDrawParams := CreateTransactionParams{
